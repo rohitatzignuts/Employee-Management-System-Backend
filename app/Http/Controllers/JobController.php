@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Validation\Rule;
 use App\Models\Job;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 
 class JobController extends Controller
 {
@@ -21,20 +23,26 @@ class JobController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create',Job::class);
-        $jobData = $request->validate([
-            'title' => 'required|string',
-            'description' => 'required|string',
-            'location' => 'required|string',
-            'pay' => 'required|string',
-            'cmp_id' => 'required|string',
-            'is_active' => ['required', 'integer', Rule::in([0, 1])],
-            'is_trending' => ['required', 'integer', Rule::in([0, 1])],
-        ]);
-        $job = Job::create($jobData);
-        return response()->json([
-            'message' => 'Job Created Successfully',
-        ]);
+        $this->authorize('create', Job::class);
+        try {
+            $jobData = $request->validate([
+                'title' => 'required|string',
+                'description' => 'required|string',
+                'pay' => 'required|string',
+                'cmp_id' => 'required|string',
+                'is_active' => ['required', 'integer', Rule::in([0, 1])],
+                'is_trending' => ['required', 'integer', Rule::in([0, 1])],
+            ]);
+            $job = Job::create($jobData);
+            return response()->json([
+                'message' => 'Job Created Successfully',
+            ]);
+        } catch (\Exception $e) {
+            // Handle other exceptions
+            return response()->json([
+                'message' => 'Failed to create job: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -42,8 +50,14 @@ class JobController extends Controller
      */
     public function show(string $id)
     {
-        $job = Job::find($id);
-        return response()->json($job);
+        try {
+            $job = Job::findOrFail($id);
+            return response()->json($job);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Job not found',
+            ], 404);
+        }
     }
 
     /**
@@ -51,10 +65,16 @@ class JobController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $this->authorize('update',Job::class);
-        $job = Job::find($id);
-        $job->update($request->all());
-        return $job;
+        $this->authorize('update', Job::class);
+        try {
+            $job = Job::findOrFail($id);
+            $job->update($request->all());
+            return $job;
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Job not found',
+            ], 404);
+        }
     }
 
     /**
@@ -62,18 +82,31 @@ class JobController extends Controller
      */
     public function destroy(string $id)
     {
-        $this->authorize('delete',Job::class);
-        $job = Job::find($id);
-        $job->delete();
-        return response()->json([
-            'message' => 'Job Deleted Successfully',
-        ]);
+        $this->authorize('delete', Job::class);
+        try {
+            $job = Job::findOrFail($id);
+            $job->delete();
+            return response()->json([
+                'message' => 'Job Deleted Successfully',
+            ]);
+        } catch (ModelNotFoundException $e) {
+            return response()->json([
+                'message' => 'Job not found',
+            ], 404);
+        }
     }
+
     /**
      * Search for a name
      */
     public function search(string $title)
     {
-        return job::where('title', 'like', '%'.$title.'%')->get();
+        try {
+            return Job::where('title', 'like', '%'.$title.'%')->get();
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

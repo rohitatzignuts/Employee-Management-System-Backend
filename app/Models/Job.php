@@ -17,4 +17,8 @@ class Job extends Model
         'is_active',
         'is_trending',
     ];
+    protected static function newFactory()
+    {
+        return \Database\Factories\JobFactory::new();
+    }
 }

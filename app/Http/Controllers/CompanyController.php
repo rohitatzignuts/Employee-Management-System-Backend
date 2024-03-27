@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Company;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class CompanyController extends Controller
 {
@@ -22,17 +23,23 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create',Company::class);
-        $companyData =  $request->validate([
-            'name' => 'required|string',
-            'logo' => 'required|string',
-            'website' => 'required|string',
-            'email' => 'required|string|email|unique:companies',
-        ]);
-        $company = Company::create($companyData);
-        return response()->json([
-            'message' => 'Company Created Successfully',
-        ]);
+        $this->authorize('create', Company::class);
+        try {
+            $companyData =  $request->validate([
+                'name' => 'required|string',
+                'logo' => 'required|string',
+                'website' => 'required|string',
+                'email' => 'required|string|email|unique:companies',
+            ]);
+            $company = Company::create($companyData);
+            return response()->json([
+                'message' => 'Company Created Successfully',
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error creating company: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -40,8 +47,14 @@ class CompanyController extends Controller
      */
     public function show(string $id)
     {
-        $company = Company::find($id);
-        return response()->json($company);
+        try{
+            $company = Company::findOrFail($id);
+            return response()->json($company);
+        }catch(ModelNotFoundException $e){
+            return response()->json([
+                'message' => 'Company found' . $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -50,9 +63,15 @@ class CompanyController extends Controller
     public function update(Request $request, string $id)
     {
         $this->authorize('update',Company::class);
-        $company = Company::find($id);
-        $company->update($request->all());
-        return $company;
+        try{
+            $company = Company::findOrFail($id);
+            $company->update($request->all());
+            return $company;
+        }catch(\Exception $e){
+            return response()->json([
+                'message' => 'Error updating company: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -61,17 +80,36 @@ class CompanyController extends Controller
     public function destroy(string $id)
     {
         $this->authorize('update',Company::class);
-        $company = Company::find($id);
-        $company->delete();
-        return response()->json([
-            'message' => 'Company Deleted Successfully',
-        ]);
+        try{
+            $company = Company::findOrFail($id);
+            $company->delete();
+            return response()->json([
+                'message' => 'Company Deleted Successfully',
+            ]);
+        }catch(ModelNotFoundException $e){
+            return response()->json([
+                'message' => 'Company not found' . $e->getMessage(),
+            ]);
+        }
     }
+
     /**
      * Search for a name
      */
     public function search(string $name)
     {
-        return Company::where('name', 'like', '%'.$name.'%')->get();
+        try {
+            $companies = Company::where('name', 'like', '%'.$name.'%')->get();
+            if ($companies->isEmpty()) {
+                return response()->json([
+                    'message' => 'Company not found',
+                ], 404);
+            }
+            return $companies;
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'An error occurred while searching for companies.',
+            ], 500);
+        }
     }
 }
