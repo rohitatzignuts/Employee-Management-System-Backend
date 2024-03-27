@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Company;
+use App\Models\User;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -29,9 +30,27 @@ class CompanyController extends Controller
                 'name' => 'required|string',
                 'logo' => 'required|string',
                 'website' => 'required|string',
-                'email' => 'required|string|email|unique:companies',
+                'cmp_email' => 'required|string|email|unique:companies',
+                'location' => 'required|string',
+                'cmp_admin_first_name' => 'required|string',
+                'cmp_admin_last_name' => 'required|string',
+                'cmp_admin_email' => 'required|email|unique:users,email',
+                'cmp_admin_password' => 'required|min:8',
             ]);
-            $company = Company::create($companyData);
+            $company = Company::create([
+                'name' => $companyData['name'],
+                'logo' => $companyData['logo'],
+                'website' => $companyData['website'],
+                'cmp_email' => $companyData['cmp_email'],
+                'location' => $companyData['location'],
+            ]);
+            $user = User::create([
+                'first_name' => $companyData['cmp_admin_first_name'],
+                'last_name' => $companyData['cmp_admin_last_name'],
+                'email' => $companyData['cmp_admin_email'],
+                'role' => 'cmp_admin',
+                'password' => bcrypt($companyData['cmp_admin_password']),
+            ]);
             return response()->json([
                 'message' => 'Company Created Successfully',
             ]);

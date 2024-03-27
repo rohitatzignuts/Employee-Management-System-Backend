@@ -15,12 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('first_name');
             $table->string('last_name');
-            $table->enum('role', ['admin', 'employee','cmp_employee','candidate'])->default('employee');
+            $table->enum('role', ['admin', 'employee','cmp_admin','candidate'])->default('candidate');
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->rememberToken();
             $table->timestamps();
+            $table->rememberToken()->nullable();
+            $table->timestamp('deleted_at')->nullable();
         });
     }
 

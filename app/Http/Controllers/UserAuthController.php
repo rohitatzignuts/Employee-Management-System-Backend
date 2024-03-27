@@ -18,7 +18,6 @@ class UserAuthController extends Controller
             $registerUserData = $request->validate([
                 'first_name' => 'required|string',
                 'last_name' => 'required|string',
-                'role' => ['required', Rule::in(['admin', 'employee', 'cmp_employee', 'candidate'])],
                 'email' => 'required|string|email|unique:users',
                 'password' => 'required|min:8'
             ]);
@@ -26,14 +25,11 @@ class UserAuthController extends Controller
                 'first_name' => $registerUserData['first_name'],
                 'last_name' => $registerUserData['last_name'],
                 'email' => $registerUserData['email'],
-                'role' => $registerUserData['role'],
                 'password' => bcrypt($registerUserData['password']),
             ]);
-            $token = $user->createToken('authToken')->plainTextToken;
             return response()->json([
-                'message' => 'User Created',
-                'access_token' => $token,
-            ]);
+                'message' => 'User Registred Successfully',
+            ],201);
         } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Failed to create user',
