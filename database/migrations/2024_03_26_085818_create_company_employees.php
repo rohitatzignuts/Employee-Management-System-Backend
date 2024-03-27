@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users');
             $table->foreignId('cmp_id')->constrained('companies');
+            $table->integer('emp_number');
             $table->unique(['emp_number', 'cmp_id']);
             $table->date('joining_date')->nullable(false);
             $table->timestamps();
