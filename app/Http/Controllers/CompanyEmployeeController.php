@@ -28,14 +28,14 @@ class CompanyEmployeeController extends Controller
         try {
             $empData =  $request->validate([
                 'user_id' => 'required|integer',
-                'cmp_id' => 'required|integer',
+                'company_id' => 'required|integer',
                 'joining_date' => 'required|date',
-                'emp_number' => 'required|integer|unique:company_employees,emp_number',
+                'emp_number' => 'required|string|unique:company_employees',
             ]);
             $joiningDate = Carbon::createFromFormat('d/m/Y', $empData['joining_date'])->format('Y-m-d');
             $emp = CompanyEmployee::create([
                 'user_id' => $empData['user_id'],
-                'cmp_id' => $empData['cmp_id'],
+                'company_id' => $empData['company_id'],
                 'joining_date' => $joiningDate,
                 'emp_number' => $empData['emp_number'],
             ]);
@@ -71,13 +71,13 @@ class CompanyEmployeeController extends Controller
         try {
             $emp = CompanyEmployee::where('user_id', $user_id)->firstOrFail();
             $empData = $request->validate([
-                'cmp_id' => 'required|integer',
+                'company_id' => 'required|integer',
                 'joining_date' => 'required|date',
                 'emp_number' => 'required|integer|unique:company_employees,emp_number,'.$user_id.',user_id',
             ]);
             $joiningDate = Carbon::createFromFormat('d/m/Y', $empData['joining_date'])->format('Y-m-d');
             $emp->update([
-                'cmp_id' => $empData['cmp_id'],
+                'company_id' => $empData['company_id'],
                 'joining_date' => $joiningDate,
                 'emp_number' => $empData['emp_number'],
             ]);

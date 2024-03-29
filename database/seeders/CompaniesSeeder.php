@@ -15,8 +15,9 @@ class CompaniesSeeder extends Seeder
     {
         DB::table('companies')->insert([
             'name' => 'Temp Inc.',
-            'email' => 'admin@companyFour.com',
+            'cmp_email' => 'admin@companyFour.com',
             'logo' => asset('storage/logoone.png'),
+            'location' => 'nowhere',
             'website' => 'https://www.company.com',
             'created_at' => now(),
             'updated_at' => now(),

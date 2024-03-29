@@ -21,7 +21,7 @@ class JobFactory extends Factory
             'description' => fake()->text(),
             'location' => fake()->address(),
             'pay' => fake()->randomDigit(),
-            'cmp_id' => 2,
+            'cmp_id' => 1,
             'is_active' => rand(0,1),
             'is_trending' => rand(0,1),
         ];

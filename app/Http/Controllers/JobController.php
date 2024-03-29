@@ -29,7 +29,7 @@ class JobController extends Controller
                 'title' => 'required|string',
                 'description' => 'required|string',
                 'pay' => 'required|string',
-                'cmp_id' => 'required|string',
+                'company_id' => 'required|string',
                 'is_active' => ['required', 'integer', Rule::in([0, 1])],
                 'is_trending' => ['required', 'integer', Rule::in([0, 1])],
             ]);

@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('company_employees', function (Blueprint $table) {
             $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('cmp_id')->constrained('companies');
-            $table->integer('emp_number');
-            $table->unique(['emp_number', 'cmp_id']);
+            $table->foreignId('company_id')->constrained('companies');
+            $table->string('emp_number');
+            $table->unique(['emp_number', 'company_id']);
             $table->date('joining_date')->nullable(false);
             $table->timestamps();
         });

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('job_status', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('cmp_id')->constrained('companies');
+            $table->foreignId('company_id')->constrained('companies');
             $table->enum('status', ['Accepted', 'Rejected','Pending'])->default('Pending');
             $table->string('resume');
             $table->timestamps();
