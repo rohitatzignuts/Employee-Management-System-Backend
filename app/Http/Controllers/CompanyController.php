@@ -84,7 +84,12 @@ class CompanyController extends Controller
     {
         try{
             $company = Company::findOrFail($id);
-            return $company;
+            $employee = $company->companyEmployee()->first();
+            $user = $employee->user;
+            return response()->json([
+                'company' => $company,
+                'employee' => $employee,
+            ]);
         }catch(ModelNotFoundException $e){
             return error('Error Finding company: ' . $e->getMessage());
         }
@@ -95,24 +100,63 @@ class CompanyController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $this->authorize('update',Company::class);
-        try{
+        $this->authorize('update', Company::class);
+        try {
             $company = Company::findOrFail($id);
-            $companyData =  $request->validate([
+            $companyEmployee = $company->companyEmployee()->first();
+            $user = $companyEmployee->user;
+
+            $companyData = $request->validate([
                 'name' => 'required|string',
-                'logo' => 'required|string',
                 'website' => 'required|string',
-                'cmp_email' => 'required|string|email',
+                'cmp_email' => [
+                    'required',
+                    'string',
+                    'email',
+                    Rule::unique('companies')->ignore($company->id),
+                ],
                 'location' => 'required|string',
+                'cmp_admin_first_name' => 'required|string',
+                'cmp_admin_last_name' => 'required|string',
+                'emp_number' => [
+                    'required',
+                    'string',
+                    Rule::unique('users', 'email')->ignore($companyEmployee->id),
+                ],
+                'cmp_admin_joining_date' => 'required|date',
+                'cmp_admin_email' => [
+                    'required',
+                    'email',
+                    Rule::unique('users', 'email')->ignore($user->id),
+                ],
             ]);
-            $company->update($companyData);
+
+            $company->update([
+                'name' => $companyData['name'],
+                'website' => $companyData['website'],
+                'cmp_email' => $companyData['cmp_email'],
+                'location' => $companyData['location'],
+            ]);
+
+            $companyEmployee->update([
+                'joining_date' => $companyData['cmp_admin_joining_date'],
+                'emp_number' => $companyData['emp_number'],
+            ]);
+
+            $user->update([
+                'first_name' => $companyData['cmp_admin_first_name'],
+                'last_name' => $companyData['cmp_admin_last_name'],
+                'email' => $companyData['cmp_admin_email'],
+            ]);
+
             return response([
-                ok('Company Updated Successfully',$company),
+                ok('Company Updated Successfully', $company),
             ]);
-        }catch(\Exception $e){
+        } catch (\Exception $e) {
             return error('Error Updating company: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Remove the specified resource from storage.
