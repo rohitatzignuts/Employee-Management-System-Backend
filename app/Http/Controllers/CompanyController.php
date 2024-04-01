@@ -40,7 +40,7 @@ class CompanyController extends Controller
                 'cmp_admin_last_name' => 'required|string',
                 'cmp_admin_email' => 'required|email|unique:users,email',
                 'cmp_admin_password' => 'required|min:8',
-                'emp_number' => 'required|string|unique:company_employees',
+                'emp_number' =>  'required|string|unique:company_employees,emp_number',
                 'cmp_admin_joining_date' => 'required|date',
             ]);
 
@@ -63,12 +63,13 @@ class CompanyController extends Controller
                 'password' => bcrypt($companyData['cmp_admin_password']),
             ]);
 
-            $companyEmployee = CompanyEmployee::create([
-                'company_id' => $company->id,
+            $data = [
                 'joining_date' => $companyData['cmp_admin_joining_date'],
                 'emp_number' => $companyData['emp_number'],
                 'user_id' => $user->id,
-            ]);
+            ];
+
+            $company->companyEmployee()->create($data);
 
             return ok('Company Created Successfully', $company);
         } catch (\Exception $e) {
@@ -101,52 +102,31 @@ class CompanyController extends Controller
     public function update(Request $request, string $id)
     {
         $this->authorize('update', Company::class);
+
         try {
             $company = Company::findOrFail($id);
-            $companyEmployee = $company->companyEmployee()->first();
-            $user = $companyEmployee->user;
 
-            $companyData = $request->validate([
-                'name' => 'required|string',
-                'website' => 'required|string',
-                'cmp_email' => [
-                    'required',
-                    'string',
-                    'email',
-                    Rule::unique('companies')->ignore($company->id),
-                ],
-                'location' => 'required|string',
-                'cmp_admin_first_name' => 'required|string',
-                'cmp_admin_last_name' => 'required|string',
-                'emp_number' => [
-                    'required',
-                    'string',
-                    Rule::unique('users', 'email')->ignore($companyEmployee->id),
-                ],
-                'cmp_admin_joining_date' => 'required|date',
-                'cmp_admin_email' => [
-                    'required',
-                    'email',
-                    Rule::unique('users', 'email')->ignore($user->id),
-                ],
-            ]);
-
+            // Update the company data
             $company->update([
-                'name' => $companyData['name'],
-                'website' => $companyData['website'],
-                'cmp_email' => $companyData['cmp_email'],
-                'location' => $companyData['location'],
+                'name' => $request->name,
+                'website' => $request->website,
+                'cmp_email' => $request->cmp_email,
+                'location' => $request->location,
             ]);
 
-            $companyEmployee->update([
-                'joining_date' => $companyData['cmp_admin_joining_date'],
-                'emp_number' => $companyData['emp_number'],
-            ]);
-
+            // Update the user (admin) data
+            $user = $company->companyEmployee->user;
             $user->update([
-                'first_name' => $companyData['cmp_admin_first_name'],
-                'last_name' => $companyData['cmp_admin_last_name'],
-                'email' => $companyData['cmp_admin_email'],
+                'first_name' => $request->cmp_admin_first_name,
+                'last_name' => $request->cmp_admin_last_name,
+                'email' => $request->cmp_admin_email,
+            ]);
+
+            // Update the company employee data
+            $companyEmployee = $company->companyEmployee;
+            $companyEmployee->update([
+                'joining_date' => $request->cmp_admin_joining_date,
+                'emp_number' => $request->emp_number,
             ]);
 
             return response([
@@ -156,7 +136,6 @@ class CompanyController extends Controller
             return error('Error Updating company: ' . $e->getMessage());
         }
     }
-
 
     /**
      * Remove the specified resource from storage.
