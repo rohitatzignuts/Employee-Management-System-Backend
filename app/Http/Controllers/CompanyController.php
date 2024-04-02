@@ -10,11 +10,19 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Services\EmployeeService;
 
 require_once app_path('Http/Helpers/APIResponse.php');
 
 class CompanyController extends Controller
 {
+    protected $employeeService;
+
+    public function __construct(EmployeeService $employeeService)
+    {
+        $this->employeeService = $employeeService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -28,9 +36,8 @@ class CompanyController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create', Company::class);
         try {
-            $companyData =  $request->validate([
+            $companyData = $request->validate([
                 'name' => 'required|string',
                 'logo' => 'mimes:jpg,jpeg,png|max:2048',
                 'website' => 'required|string',
@@ -40,7 +47,6 @@ class CompanyController extends Controller
                 'cmp_admin_last_name' => 'required|string',
                 'cmp_admin_email' => 'required|email|unique:users,email',
                 'cmp_admin_password' => 'required|min:8',
-                'emp_number' =>  'required|string|unique:company_employees,emp_number',
                 'cmp_admin_joining_date' => 'required|date',
             ]);
 
@@ -65,7 +71,7 @@ class CompanyController extends Controller
 
             $data = [
                 'joining_date' => $companyData['cmp_admin_joining_date'],
-                'emp_number' => $companyData['emp_number'],
+                'emp_number' => $this->employeeService->generateUniqueEmployeeNumber(),
                 'user_id' => $user->id,
             ];
 
@@ -77,21 +83,21 @@ class CompanyController extends Controller
         }
     }
 
-
     /**
      * Display the specified resource.
      */
     public function show(string $id)
     {
-        try{
+        try {
             $company = Company::findOrFail($id);
             $employee = $company->companyEmployee()->first();
             $user = $employee->user;
+
             return response()->json([
                 'company' => $company,
                 'employee' => $employee,
             ]);
-        }catch(ModelNotFoundException $e){
+        } catch (ModelNotFoundException $e) {
             return error('Error Finding company: ' . $e->getMessage());
         }
     }
@@ -101,39 +107,49 @@ class CompanyController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $this->authorize('update', Company::class);
-
         try {
             $company = Company::findOrFail($id);
+            $companyEmployee = $company->companyEmployee()->first();
+            $user = $companyEmployee->user;
+
+            $companyData = $request->validate([
+                'name' => 'required|string',
+                'website' => 'required|string',
+                'cmp_email' => ['required', 'string', 'email', Rule::unique('companies')->ignore($id)],
+                'location' => 'required|string',
+                'is_active' => 'sometimes|integer',
+                'cmp_admin_first_name' => 'required|string',
+                'cmp_admin_last_name' => 'required|string',
+                'cmp_admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+                'cmp_admin_joining_date' => 'required|date',
+            ]);
 
             // Update the company data
             $company->update([
-                'name' => $request->name,
-                'website' => $request->website,
-                'cmp_email' => $request->cmp_email,
-                'location' => $request->location,
+                'name' => $companyData['name'],
+                'website' => $companyData['website'],
+                'cmp_email' => $companyData['cmp_email'],
+                'location' => $companyData['location'],
+                'is_active' => $companyData['is_active'],
             ]);
 
-            // Update the user (admin) data
-            $user = $company->companyEmployee->user;
+            // Update or create the user (admin) data
             $user->update([
-                'first_name' => $request->cmp_admin_first_name,
-                'last_name' => $request->cmp_admin_last_name,
-                'email' => $request->cmp_admin_email,
+                'first_name' => $companyData['cmp_admin_first_name'],
+                'last_name' => $companyData['cmp_admin_last_name'],
+                'email' => $companyData['cmp_admin_email'],
             ]);
 
-            // Update the company employee data
-            $companyEmployee = $company->companyEmployee;
-            $companyEmployee->update([
-                'joining_date' => $request->cmp_admin_joining_date,
-                'emp_number' => $request->emp_number,
-            ]);
+            $data = [
+                'joining_date' => $companyData['cmp_admin_joining_date'],
+            ];
 
-            return response([
-                ok('Company Updated Successfully', $company),
-            ]);
+            // Update or create the company employee data
+            $company->companyEmployee()->update($data);
+
+            return response()->json(['status' => 200, 'message' => 'Company Updated Successfully', 'data' => $company]);
         } catch (\Exception $e) {
-            return error('Error Updating company: ' . $e->getMessage());
+            return response()->json(['status' => 500, 'message' => 'Error Updating company: ' . $e->getMessage(), 'data' => []]);
         }
     }
 
@@ -142,13 +158,20 @@ class CompanyController extends Controller
      */
     public function destroy(string $id)
     {
-        $this->authorize('update',Company::class);
-        try{
-            $company = Company::findOrFail($id);
+        try {
+            $company = Company::with('companyEmployee.user')->findOrFail($id);
+
+            // Soft delete the company
             $company->delete();
-            return ok('Company Deleted Successfully');
-        }catch(ModelNotFoundException $e){
-            return error('Error Deleting company: ' . $e->getMessage());
+
+            // Soft delete the associated users
+            foreach ($company->companyEmployee as $employee) {
+                $employee->user->delete();
+            }
+
+            return ok('Company and associated users deleted successfully');
+        } catch (ModelNotFoundException $e) {
+            return error('Error deleting company and associated users: ' . $e->getMessage());
         }
     }
 
@@ -158,11 +181,14 @@ class CompanyController extends Controller
     public function search(string $name)
     {
         try {
-            $companies = Company::where('name', 'like', '%'.$name.'%')->get();
+            $companies = Company::where('name', 'like', '%' . $name . '%')->get();
             if ($companies->isEmpty()) {
-                return response()->json([
-                    'message' => 'Company not found',
-                ], 404);
+                return response()->json(
+                    [
+                        'message' => 'Company not found',
+                    ],
+                    404,
+                );
             }
             return $companies;
         } catch (\Exception $e) {

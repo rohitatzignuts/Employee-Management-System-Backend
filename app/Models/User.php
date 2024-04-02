@@ -46,7 +46,7 @@ class User extends Authenticatable
         'password' => 'hashed',
     ];
 
-    public function companyEmployee(){
-        return $this->hasOne(CompanyEmployee::class, 'user_id');
+    public function companyEmployees() {
+        return $this->hasMany(CompanyEmployee::class);
     }
 }
