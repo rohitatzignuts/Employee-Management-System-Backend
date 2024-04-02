@@ -117,7 +117,7 @@ class CompanyController extends Controller
                 'website' => 'required|string',
                 'cmp_email' => ['required', 'string', 'email', Rule::unique('companies')->ignore($id)],
                 'location' => 'required|string',
-                'is_active' => 'sometimes|integer',
+                'is_active' => 'sometimes|boolean',
                 'cmp_admin_first_name' => 'required|string',
                 'cmp_admin_last_name' => 'required|string',
                 'cmp_admin_email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
