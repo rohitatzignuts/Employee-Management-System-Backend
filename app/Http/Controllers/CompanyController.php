@@ -52,6 +52,8 @@ class CompanyController extends Controller
 
             // Save the uploaded logo file
             $logoPath = $request->file('logo')->store('public/logos');
+            // Remove the 'public/' prefix from the path
+            $logoPath = str_replace('public/', '', $logoPath);
 
             $company = Company::create([
                 'name' => $companyData['name'],
