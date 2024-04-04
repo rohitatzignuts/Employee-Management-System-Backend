@@ -14,6 +14,7 @@ class Company extends Model
         'logo',
         'website',
         'location',
+        'is_active'
     ];
 
     public function companyEmployee(){

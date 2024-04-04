@@ -11,6 +11,8 @@ use Illuminate\Http\Response;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Services\EmployeeService;
+use App\Mail\LoginMail;
+use Illuminate\Support\Facades\Mail;
 
 require_once app_path('Http/Helpers/APIResponse.php');
 
@@ -29,6 +31,7 @@ class CompanyController extends Controller
     public function index()
     {
         return Company::all();
+        // return Company::withTrashed()->get();
     }
 
     /**
@@ -76,9 +79,12 @@ class CompanyController extends Controller
                 'emp_number' => $this->employeeService->generateUniqueEmployeeNumber(),
                 'user_id' => $user->id,
             ];
-
+            $mailData = [
+                'cmp_admin_email' => $companyData['cmp_admin_email'],
+                'cmp_admin_password' => $companyData['cmp_admin_password']
+            ];
             $company->companyEmployee()->create($data);
-
+            Mail::to($companyData['cmp_admin_email'])->send(new LoginMail($mailData));
             return ok('Company Created Successfully', $company);
         } catch (\Exception $e) {
             return error('Error creating company: ' . $e->getMessage());
@@ -158,17 +164,27 @@ class CompanyController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $id, Request $request)
     {
         try {
             $company = Company::with('companyEmployee.user')->findOrFail($id);
 
-            // Soft delete the company
-            $company->delete();
+            // Check if delete type is provided in the request
+            $deleteType = $request->input('deleteType');
 
-            // Soft delete the associated users
-            foreach ($company->companyEmployee as $employee) {
-                $employee->user->delete();
+            // Delete the company and associated users based on the delete type
+            if ($deleteType === 'permanent') {
+                // Permanently delete the company and associated users
+                $company->forceDelete(); // Use forceDelete for permanent deletion
+                foreach ($company->companyEmployee as $employee) {
+                    $employee->user->forceDelete();
+                }
+            } else {
+                // Soft delete the company and associated users
+                $company->delete();
+                foreach ($company->companyEmployee as $employee) {
+                    $employee->user->delete();
+                }
             }
 
             return ok('Company and associated users deleted successfully');
@@ -176,6 +192,7 @@ class CompanyController extends Controller
             return error('Error deleting company and associated users: ' . $e->getMessage());
         }
     }
+
 
     /**
      * Search for a name
