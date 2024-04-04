@@ -16,12 +16,15 @@ class IsAdminMiddleware
      * @param  \Closure  $next
      * @return \Illuminate\Http\Response|\Symfony\Component\HttpFoundation\Response
      */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next, ... $roles): Response
     {
-        $user = $request->user(); // Retrieve the authenticated user
+        if (!is_array($roles)) {
+            $roles = [$roles];
+        }
 
-        if (!$user || $user->role !== 'admin') {
-            return response()->json(['error' => 'Unauthorized'], 403);
+        if (!in_array(auth()->user()->role, $roles)) {
+            $errorMessage = 'Unauthorized';
+            return response()->json(['error' => $errorMessage], 403);
         }
 
         return $next($request);

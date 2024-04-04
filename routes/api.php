@@ -19,7 +19,6 @@ use App\Http\Controllers\CompanyEmployeeController;
 */
 
 // public routes
-Route::get('/companies', [CompanyController::class, 'index']);
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/jobs', [JobController::class, 'index']);
@@ -28,11 +27,9 @@ Route::get('/jobs', [JobController::class, 'index']);
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [UserAuthController::class, 'logout']);
     // company routes
-    Route::group(
-        [
-            'middleware' => 'is_admin',
-        ],
+    Route::middleware(['auth', 'is_admin'])->group(
         function () {
+            Route::get('/companies', [CompanyController::class, 'index']);
             Route::get('/company/{id}', [CompanyController::class, 'show']);
             Route::post('/company/create', [CompanyController::class, 'store']);
             Route::delete('/company/{id}', [CompanyController::class, 'destroy']);
