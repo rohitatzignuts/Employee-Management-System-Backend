@@ -72,18 +72,16 @@ class CompanyController extends Controller
                 'email' => $companyData['cmp_admin_email'],
                 'role' => 'cmp_admin',
                 'password' => bcrypt($companyData['cmp_admin_password']),
+                'joining_date' => $companyData['cmp_admin_joining_date'],
+                'company_id' => $company->id,
+                'emp_number' => $this->employeeService->generateUniqueEmployeeNumber(),
             ]);
 
-            $data = [
-                'joining_date' => $companyData['cmp_admin_joining_date'],
-                'emp_number' => $this->employeeService->generateUniqueEmployeeNumber(),
-                'user_id' => $user->id,
-            ];
             $mailData = [
                 'cmp_admin_email' => $companyData['cmp_admin_email'],
-                'cmp_admin_password' => $companyData['cmp_admin_password']
+                'cmp_admin_password' => $companyData['cmp_admin_password'],
             ];
-            $company->companyEmployee()->create($data);
+
             Mail::to($companyData['cmp_admin_email'])->send(new LoginMail($mailData));
             return ok('Company Created Successfully', $company);
         } catch (\Exception $e) {
@@ -192,7 +190,6 @@ class CompanyController extends Controller
             return error('Error deleting company and associated users: ' . $e->getMessage());
         }
     }
-
 
     /**
      * Search for a name

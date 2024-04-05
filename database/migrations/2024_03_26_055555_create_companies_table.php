@@ -15,9 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('cmp_email')->unique();
-            $table->string('logo');
+            $table->string('logo')->nullable();
             $table->string('website');
             $table->string('location');
+            $table->boolean('is_active')->default(1);
+            $table->softDeletes();
             $table->timestamps();
         });
     }

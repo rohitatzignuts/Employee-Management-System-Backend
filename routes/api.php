@@ -27,7 +27,7 @@ Route::get('/jobs', [JobController::class, 'index']);
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [UserAuthController::class, 'logout']);
     // company routes
-    Route::middleware(['auth', 'is_admin'])->group(
+    Route::middleware(['checkRole:admin'])->group(
         function () {
             Route::get('/companies', [CompanyController::class, 'index']);
             Route::get('/company/{id}', [CompanyController::class, 'show']);

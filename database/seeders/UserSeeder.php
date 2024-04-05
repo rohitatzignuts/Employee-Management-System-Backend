@@ -22,6 +22,9 @@ class UserSeeder extends Seeder
             'role' => 'admin',
             'email' => $userEmail,
             'password' => $password,
+            'company_id' => 1,
+            'emp_number' => 000,
+            'joining_date' => '2024-03-10',
             'created_at' => now(),
             'updated_at' => now(),
         ]);

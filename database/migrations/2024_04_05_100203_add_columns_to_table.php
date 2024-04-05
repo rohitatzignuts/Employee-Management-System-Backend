@@ -11,13 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('company_employees', function (Blueprint $table) {
-            $table->foreignId('user_id')->constrained('users');
+        Schema::table('users', function (Blueprint $table) {
             $table->foreignId('company_id')->constrained('companies');
             $table->string('emp_number');
             $table->unique(['emp_number', 'company_id']);
             $table->date('joining_date')->nullable(false);
-            $table->timestamps();
         });
     }
 
@@ -26,6 +24,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('company_employees');
+        Schema::table('users', function (Blueprint $table) {
+            //
+        });
     }
 };
