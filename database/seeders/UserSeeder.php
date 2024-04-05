@@ -13,7 +13,7 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        $password =  bcrypt('password');
+        $password = bcrypt('password');
         $userEmail = 'admin@company.com';
 
         DB::table('users')->insert([
@@ -23,8 +23,8 @@ class UserSeeder extends Seeder
             'email' => $userEmail,
             'password' => $password,
             'company_id' => 1,
-            'emp_number' => 000,
-            'joining_date' => '2024-03-10',
+            'emp_number' => null,
+            'joining_date' => null,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

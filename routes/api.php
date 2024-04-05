@@ -27,23 +27,22 @@ Route::get('/jobs', [JobController::class, 'index']);
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [UserAuthController::class, 'logout']);
     // company routes
-    Route::middleware(['checkRole:admin'])->group(
-        function () {
-            Route::get('/companies', [CompanyController::class, 'index']);
-            Route::get('/company/{id}', [CompanyController::class, 'show']);
-            Route::post('/company/create', [CompanyController::class, 'store']);
-            Route::delete('/company/{id}', [CompanyController::class, 'destroy']);
-            Route::post('/company/update/{id}', [CompanyController::class, 'update']);
-            Route::get('/company/search/{name}', [CompanyController::class, 'search']);
-        },
-    );
+    Route::middleware(['checkRole:admin'])->group(function () {
+        Route::get('/companies', [CompanyController::class, 'index']);
+        Route::get('/company/{id}', [CompanyController::class, 'show']);
+        Route::post('/company/create', [CompanyController::class, 'store']);
+        Route::delete('/company/{id}', [CompanyController::class, 'destroy']);
+        Route::post('/company/update/{id}', [CompanyController::class, 'update']);
+        Route::get('/company/search/{name}', [CompanyController::class, 'search']);
+    });
 
     // company emoloyee routes
     Route::get('/employees', [CompanyEmployeeController::class, 'index']);
     Route::get('/employee/{id}', [CompanyEmployeeController::class, 'show']);
-    Route::post('/employee/create', [CompanyEmployeeController::class, 'store']);
+    Route::post('/employee/create', [CompanyController::class, 'store']);
     Route::put('/employee/update/{id}', [CompanyEmployeeController::class, 'update']);
     Route::delete('/employee/{id}', [CompanyEmployeeController::class, 'destroy']);
+
     // jobs routes
     Route::get('/job/{id}', [JobController::class, 'show']);
     Route::post('/job/create', [JobController::class, 'store']);

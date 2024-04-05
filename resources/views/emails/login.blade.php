@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>Login Creds</title>
     <style>
@@ -9,6 +10,7 @@
             margin: 0;
             padding: 0;
         }
+
         .container {
             max-width: 600px;
             margin: 20px auto;
@@ -17,29 +19,35 @@
             border-radius: 5px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
+
         h1 {
             color: #333;
         }
+
         ul {
             list-style-type: none;
             padding: 0;
         }
+
         li {
             margin-bottom: 10px;
         }
+
         li strong {
             font-weight: bold;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Login Credentials</h1>
         <p>Here are your login credentials:</p>
         <ul>
-            <li><strong>Email:</strong> {{ $mailData['cmp_admin_email'] }}</li>
-            <li><strong>Password:</strong> {{ $mailData['cmp_admin_password'] }}</li>
+            <li><strong>Email:</strong> {{ $mailData['email'] }}</li>
+            <li><strong>Password:</strong> {{ $mailData['password'] }}</li>
         </ul>
     </div>
 </body>
+
 </html>

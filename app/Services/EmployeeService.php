@@ -6,19 +6,19 @@ use App\Models\User;
 
 class EmployeeService
 {
-    public function generateUniqueEmployeeNumber()
+    public function generateUniqueEmployeeNumber(string $companyId)
     {
-        $employeeNumber = '0001'; // Start with a default employee number
-        $latestEmployee = User::with('companyEmployees')->latest('id')->first();
+        $latestEmployee = User::where('company_id', $companyId)->latest('id')->first();
 
-        if ($latestEmployee && $latestEmployee->companyEmployees->isNotEmpty()) {
-            $latestEmployeeNumber = $latestEmployee->companyEmployees->first()->emp_number;
+        if ($latestEmployee) {
+            $latestEmployeeNumber = $latestEmployee->emp_number;
             $latestEmployeeNumberParts = explode('-', $latestEmployeeNumber);
             $latestEmployeeSuffix = end($latestEmployeeNumberParts);
             $nextEmployeeSuffix = (int) $latestEmployeeSuffix + 1;
             $employeeNumber = str_pad($nextEmployeeSuffix, strlen($latestEmployeeSuffix), '0', STR_PAD_LEFT);
+            return $employeeNumber;
         }
 
-        return $employeeNumber;
+        return '0001';
     }
 }
