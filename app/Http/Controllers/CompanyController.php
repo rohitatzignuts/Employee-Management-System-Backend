@@ -30,7 +30,10 @@ class CompanyController extends Controller
      */
     public function index()
     {
-        return Company::all();
+        $companies = Company::all()->toArray();
+        $companies = array_slice($companies, 1); // Remove the first element (no related user data)
+
+        return $companies;
         // return Company::withTrashed()->get();
     }
 

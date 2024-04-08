@@ -12,10 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade')->nullable();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->onDelete('cascade');
             $table->string('emp_number')->nullable();
-            $table->unique(['emp_number', 'company_id']);
-            $table->date('joining_date')->nullable(false)->nullable();
+            $table->unique(['emp_number', 'company_id'])->nullable();
+            $table->date('joining_date')->nullable();
         });
     }
 
