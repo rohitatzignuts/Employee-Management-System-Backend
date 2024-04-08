@@ -37,11 +37,13 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     // company emoloyee routes
-    Route::get('/employees', [CompanyEmployeeController::class, 'index']);
-    Route::get('/employee/{id}', [CompanyEmployeeController::class, 'show']);
-    Route::post('/employee/create', [CompanyController::class, 'store']);
-    Route::put('/employee/update/{id}', [CompanyEmployeeController::class, 'update']);
-    Route::delete('/employee/{id}', [CompanyEmployeeController::class, 'destroy']);
+    Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
+        Route::get('/employees', [CompanyEmployeeController::class, 'index']);
+        Route::get('/employee/{id}', [CompanyEmployeeController::class, 'show']);
+        Route::post('/employee/create', [CompanyEmployeeController::class, 'store']);
+        Route::put('/employee/update/{id}', [CompanyEmployeeController::class, 'update']);
+        Route::delete('/employee/{id}', [CompanyEmployeeController::class, 'destroy']);
+    });
 
     // jobs routes
     Route::get('/job/{id}', [JobController::class, 'show']);

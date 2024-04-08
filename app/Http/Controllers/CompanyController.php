@@ -78,12 +78,12 @@ class CompanyController extends Controller
                 'password' => bcrypt($companyData['password']),
                 'joining_date' => $companyData['joining_date'],
                 'company_id' => $company->id,
-                'emp_number' => 'EMP' . $employeeNumber,
+                'emp_number' => $employeeNumber,
             ]);
 
-            $preference = Preferences::Create([
+            $preference = Preferences::updateOrCreate([
                 'code' => 'EMP',
-                'value' => (int)$employeeNumber,
+                'value' => (int)substr($employeeNumber, 4)
             ]);
 
             $mailData = [
@@ -105,7 +105,7 @@ class CompanyController extends Controller
     {
         try {
             $company = Company::findOrFail($id);
-            $user = User::where('company_id', $company->id)
+            $user = User::where([['company_id', $company->id],['role','cmp_admin']])
                 ->latest('id')
                 ->first();
 
@@ -125,7 +125,7 @@ class CompanyController extends Controller
     {
         try {
             $company = Company::findOrFail($id);
-            $user = User::where('company_id', $company->id)
+            $user = User::where([['company_id', $company->id],['role','cmp_admin']])
                 ->latest('id')
                 ->first();
 
