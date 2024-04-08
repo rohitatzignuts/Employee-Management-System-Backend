@@ -1,6 +1,6 @@
 # Installation
 
-### First clone this repository, install the dependencies, and setup your .env file.
+### First clone this repository, install the dependencies
 
 `git clone https://github.com/rohitatzignuts/Employee-Management-System-Backend
 composer install`
