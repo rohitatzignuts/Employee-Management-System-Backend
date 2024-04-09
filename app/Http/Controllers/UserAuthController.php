@@ -57,6 +57,9 @@ class UserAuthController extends Controller
             return response()->json([
                 'message' => 'Logged in successfully',
                 'access_token' => $token,
+                'role' => $user->role,
+                'company_id' => $user->company_id,
+                'company_name' => $user->company->name
             ]);
         } catch (\Exception $e) {
             return response()->json([

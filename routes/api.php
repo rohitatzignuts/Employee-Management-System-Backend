@@ -39,6 +39,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // company emoloyee routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
         Route::get('/employees', [CompanyEmployeeController::class, 'index']);
+        Route::get('/{id}/employees', [CompanyEmployeeController::class, 'companyEmployees']);
         Route::get('/employee/{id}', [CompanyEmployeeController::class, 'show']);
         Route::post('/employee/create', [CompanyEmployeeController::class, 'store']);
         Route::post('/employee/update/{id}', [CompanyEmployeeController::class, 'update']);

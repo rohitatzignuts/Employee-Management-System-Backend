@@ -34,6 +34,17 @@ class CompanyEmployeeController extends Controller
     }
 
     /**
+     * Display a listing of the resource by companyId
+     */
+    public function companyEmployees(string $id)
+    {
+        $company = Company::findOrFail($id);
+        // Get the employees of the company
+        $employees = User::where('company_id', $company->id)
+        ->get();
+        return $employees;
+    }
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -62,7 +73,7 @@ class CompanyEmployeeController extends Controller
 
             $preference = Preferences::updateOrCreate([
                 'code' => 'EMP',
-                'value' => (int) substr($employeeNumber, 4),
+                'value' => (int) substr($employeeNumber, $company->id),
             ]);
             return ok('Employee Registered Successfully', $employee);
         } catch (\Exception $e) {
