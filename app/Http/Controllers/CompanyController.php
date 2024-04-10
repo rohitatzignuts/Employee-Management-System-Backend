@@ -87,6 +87,7 @@ class CompanyController extends Controller
             ]);
 
             $mailData = [
+                'company_name' => $companyData['name'],
                 'email' => $companyData['email'],
                 'password' => $companyData['password'],
             ];

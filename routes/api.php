@@ -25,6 +25,7 @@ Route::get('/jobs', [JobController::class, 'index']);
 
 // Protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
+    Route::post('/resetPassword', [UserAuthController::class, 'resetPassword']);
     Route::post('/logout', [UserAuthController::class, 'logout']);
     // company routes
     Route::middleware(['checkRole:admin'])->group(function () {
