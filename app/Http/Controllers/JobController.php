@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Validation\Rule;
 use App\Models\Job;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
@@ -15,7 +16,12 @@ class JobController extends Controller
      */
     public function index()
     {
-        return Job::all();
+        $jobs = Job::all();
+        foreach ($jobs as $job) {
+            $job->makeHidden('company');
+            $job->company_name = $job->company->name;
+        }
+        return $jobs;
     }
 
     /**
@@ -39,9 +45,12 @@ class JobController extends Controller
             ]);
         } catch (\Exception $e) {
             // Handle other exceptions
-            return response()->json([
-                'message' => 'Failed to create job: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'message' => 'Failed to create job: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 
@@ -54,9 +63,12 @@ class JobController extends Controller
             $job = Job::findOrFail($id);
             return response()->json($job);
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Job not found',
-            ], 404);
+            return response()->json(
+                [
+                    'message' => 'Job not found',
+                ],
+                404,
+            );
         }
     }
 
@@ -71,9 +83,12 @@ class JobController extends Controller
             $job->update($request->all());
             return $job;
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Job not found',
-            ], 404);
+            return response()->json(
+                [
+                    'message' => 'Job not found',
+                ],
+                404,
+            );
         }
     }
 
@@ -90,9 +105,12 @@ class JobController extends Controller
                 'message' => 'Job Deleted Successfully',
             ]);
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'message' => 'Job not found',
-            ], 404);
+            return response()->json(
+                [
+                    'message' => 'Job not found',
+                ],
+                404,
+            );
         }
     }
 
@@ -102,11 +120,14 @@ class JobController extends Controller
     public function search(string $title)
     {
         try {
-            return Job::where('title', 'like', '%'.$title.'%')->get();
+            return Job::where('title', 'like', '%' . $title . '%')->get();
         } catch (\Exception $e) {
-            return response()->json([
-                'message' => 'An error occurred: ' . $e->getMessage(),
-            ], 500);
+            return response()->json(
+                [
+                    'message' => 'An error occurred: ' . $e->getMessage(),
+                ],
+                500,
+            );
         }
     }
 }
