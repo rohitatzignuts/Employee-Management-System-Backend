@@ -48,9 +48,11 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     });
 
     // jobs routes
-    Route::get('/job/{id}', [JobController::class, 'show']);
-    Route::post('/job/create', [JobController::class, 'store']);
-    Route::put('/job/update/{id}', [JobController::class, 'update']);
-    Route::delete('/job/{id}', [JobController::class, 'destroy']);
-    Route::get('/job/search/{title}', [JobController::class, 'search']);
+    Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
+        Route::get('/job/{id}', [JobController::class, 'show']);
+        Route::post('/job/create', [JobController::class, 'store']);
+        Route::post('/job/update/{id}', [JobController::class, 'update']);
+        Route::delete('/job/{id}', [JobController::class, 'destroy']);
+        Route::get('/job/search/{title}', [JobController::class, 'search']);
+    });
 });

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class UserSeeder extends Seeder
 {
@@ -16,7 +17,7 @@ class UserSeeder extends Seeder
         $password = bcrypt('password');
         $userEmail = 'admin@company.com';
 
-        DB::table('users')->insert([
+        User::updateOrCreate([
             'first_name' => 'rohit',
             'last_name' => 'vispute',
             'role' => 'admin',

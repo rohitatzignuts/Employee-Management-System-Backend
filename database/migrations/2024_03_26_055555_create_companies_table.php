@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('website');
             $table->string('location');
             $table->boolean('is_active')->default(1);
+            $table->integer('created_by')->nullable();
+            $table->integer('updated_by')->nullable();
             $table->softDeletes();
             $table->timestamps();
         });

@@ -18,8 +18,8 @@ return new class extends Migration
             $table->string('location');
             $table->string('pay');
             $table->foreignId('company_id')->constrained('companies');
-            $table->tinyInteger('is_active')->defaultValue('0');
-            $table->tinyInteger('is_trending')->defaultValue('0');
+            $table->tinyInteger('is_active')->default(0);
+            $table->tinyInteger('is_trending')->default(0);
             $table->timestamps();
         });
     }

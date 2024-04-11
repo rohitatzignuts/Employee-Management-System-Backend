@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use App\Models\Company;
 
 class CompaniesSeeder extends Seeder
 {
@@ -13,7 +14,7 @@ class CompaniesSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('companies')->insert([
+        Company::updateOrCreate([
             'name' => 'Temp Inc.',
             'cmp_email' => 'admin@companyFour.com',
             'logo' => asset('storage/logos/logoone.png'),

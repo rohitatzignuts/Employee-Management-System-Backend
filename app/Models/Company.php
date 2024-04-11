@@ -19,4 +19,11 @@ class Company extends Model
     {
         return $this->hasMany(Job::class);
     }
+
+    public function companyAdmin()
+    {
+        return $this->hasOne(User::class)
+            ->where('role', 'cmp_admin')
+            ->latest('id');
+    }
 }

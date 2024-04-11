@@ -32,7 +32,6 @@ class CompanyController extends Controller
     {
         $companies = Company::all()->toArray();
         $companies = array_slice($companies, 1); // Remove the first element (no related user data)
-
         return $companies;
         // return Company::withTrashed()->get();
     }
@@ -43,7 +42,7 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         try {
-            $companyData = $request->validate([
+            $request->validate([
                 'name' => 'required|string',
                 'logo' => 'mimes:jpg,jpeg,png|max:2048',
                 'website' => 'required|string',
@@ -60,39 +59,17 @@ class CompanyController extends Controller
             $logoPath = $request->file('logo')->store('public/logos');
             // Remove the 'public/' prefix from the path
             $logoPath = str_replace('public/', '', $logoPath);
-
-            $company = Company::create([
-                'name' => $companyData['name'],
-                'logo' => $logoPath,
-                'website' => $companyData['website'],
-                'cmp_email' => $companyData['cmp_email'],
-                'location' => $companyData['location'],
-            ]);
-
-            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
-            $user = User::create([
-                'first_name' => $companyData['first_name'],
-                'last_name' => $companyData['last_name'],
-                'email' => $companyData['email'],
-                'role' => 'cmp_admin',
-                'password' => bcrypt($companyData['password']),
-                'joining_date' => $companyData['joining_date'],
-                'company_id' => $company->id,
-                'emp_number' => $employeeNumber,
-            ]);
-
-            $preference = Preferences::updateOrCreate([
-                'code' => 'EMP',
-                'value' => (int)substr($employeeNumber, 4)
-            ]);
+            $company = Company::create($request->only(['name', 'website', 'cmp_email', 'location']) + ['logo' => $logoPath] + ['created_by' => auth()->user()->id]);
+            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber();
+            $user = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'cmp_admin'] + ['password' => bcrypt($request['password'])] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber] + ['created_by' => auth()->user()->id]);
 
             $mailData = [
-                'company_name' => $companyData['name'],
-                'email' => $companyData['email'],
-                'password' => $companyData['password'],
+                'company_name' => $request['name'],
+                'email' => $request['email'],
+                'password' => $request['password'],
             ];
 
-            Mail::to($companyData['email'])->send(new LoginMail($mailData));
+            Mail::to($request['email'])->send(new LoginMail($mailData));
             return ok('Company Created Successfully', $company);
         } catch (\Exception $e) {
             return error('Error creating company: ' . $e->getMessage());
@@ -105,14 +82,11 @@ class CompanyController extends Controller
     public function show(string $id)
     {
         try {
-            $company = Company::findOrFail($id);
-            $user = User::where([['company_id', $company->id],['role','cmp_admin']])
-                ->latest('id')
-                ->first();
-
+            $company = Company::with('companyAdmin')->findOrFail($id);
+            $adminUser = $company->companyAdmin;
             return response()->json([
                 'company' => $company,
-                'employee' => $user,
+                'employee' => $adminUser,
             ]);
         } catch (ModelNotFoundException $e) {
             return error('Error Finding company: ' . $e->getMessage());
@@ -126,11 +100,9 @@ class CompanyController extends Controller
     {
         try {
             $company = Company::findOrFail($id);
-            $user = User::where([['company_id', $company->id],['role','cmp_admin']])
-                ->latest('id')
-                ->first();
+            $user = $company->companyAdmin;
 
-            $companyData = $request->validate([
+            $request->validate([
                 'name' => 'required|string',
                 'website' => 'required|string',
                 'cmp_email' => ['required', 'string', 'email', Rule::unique('companies')->ignore($id)],
@@ -143,21 +115,10 @@ class CompanyController extends Controller
             ]);
 
             // Update the company data
-            $company->update([
-                'name' => $companyData['name'],
-                'website' => $companyData['website'],
-                'cmp_email' => $companyData['cmp_email'],
-                'location' => $companyData['location'],
-                'is_active' => $companyData['is_active'],
-            ]);
+            $company->update($request->only(['name', 'website', 'cmp_email', 'location', 'is_active']));
 
             // Update or create the user (admin) data
-            $user->update([
-                'first_name' => $companyData['first_name'],
-                'last_name' => $companyData['last_name'],
-                'email' => $companyData['email'],
-                'joining_date' => $companyData['joining_date'],
-            ]);
+            $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
 
             return response()->json(['status' => 200, 'message' => 'Company Updated Successfully', 'data' => $company]);
         } catch (\Exception $e) {

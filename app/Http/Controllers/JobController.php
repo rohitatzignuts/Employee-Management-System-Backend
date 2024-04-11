@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use Illuminate\Validation\Rule;
 use App\Models\Job;
+use App\Models\User;
 use App\Models\Company;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
+require_once app_path('Http/Helpers/APIResponse.php');
 
 class JobController extends Controller
 {
@@ -29,28 +31,18 @@ class JobController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create', Job::class);
         try {
-            $jobData = $request->validate([
+            $request->validate([
                 'title' => 'required|string',
                 'description' => 'required|string',
+                'location' => 'required|string',
                 'pay' => 'required|string',
-                'company_id' => 'required|string',
-                'is_active' => ['required', 'integer', Rule::in([0, 1])],
-                'is_trending' => ['required', 'integer', Rule::in([0, 1])],
             ]);
-            $job = Job::create($jobData);
-            return response()->json([
-                'message' => 'Job Created Successfully',
-            ]);
+            $company_id = Company::where('name', $request['company_name'])->first()->id;
+            $job = Job::create($request->only(['title', 'description', 'location', 'pay']) + ['created_by' => auth()->user()->id] + ['company_id' => $company_id]);
+            return ok('Jon Created Successfully', $job);
         } catch (\Exception $e) {
-            // Handle other exceptions
-            return response()->json(
-                [
-                    'message' => 'Failed to create job: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return error('Error Creating Job : ' . $e->getMessage());
         }
     }
 
@@ -77,40 +69,43 @@ class JobController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $this->authorize('update', Job::class);
         try {
             $job = Job::findOrFail($id);
+            $request->validate([
+                'title' => 'required|string',
+                'description' => 'required|string',
+                'location' => 'required|string',
+                'pay' => 'required|string',
+            ]);
             $job->update($request->all());
-            return $job;
-        } catch (ModelNotFoundException $e) {
-            return response()->json(
-                [
-                    'message' => 'Job not found',
-                ],
-                404,
-            );
+            return ok('Jon Updated Successfully', $job);
+        } catch (\Exception $e) {
+            return error('Error Updating Job : ' . $e->getMessage());
         }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request,string $id)
     {
-        $this->authorize('delete', Job::class);
         try {
             $job = Job::findOrFail($id);
-            $job->delete();
-            return response()->json([
-                'message' => 'Job Deleted Successfully',
-            ]);
+
+            // Check if delete type is provided in the request
+            $deleteType = $request->input('deleteType');
+
+            // Delete the company and associated users based on the delete type
+            if ($deleteType === 'permanent') {
+                // Permanently delete the company and associated users
+                $job->forceDelete(); // Use forceDelete for permanent deletion
+            } else {
+                // Soft delete the company and associated users
+                $job->delete();
+            }
+            return ok('Job deleted successfully');
         } catch (ModelNotFoundException $e) {
-            return response()->json(
-                [
-                    'message' => 'Job not found',
-                ],
-                404,
-            );
+            return error('Error deleting Job: ' . $e->getMessage());
         }
     }
 

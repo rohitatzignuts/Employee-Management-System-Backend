@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\User;
 
-class IsAuthMiddleware
+class CheckRole
 {
     /**
      * Handle an incoming request.

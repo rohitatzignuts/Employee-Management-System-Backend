@@ -38,19 +38,23 @@ class CompanyEmployeeController extends Controller
      */
     public function companyEmployees(string $id)
     {
-        $company = Company::findOrFail($id);
-        // Get the employees of the company
-        $employees = User::where('company_id', $company->id)
-        ->get();
-        return $employees;
+        try {
+            $company = Company::findOrFail($id);
+            // Get the employees of the company
+            $employees = User::where('company_id', $company->id)->get();
+            return ok('Employees Found Successfully', $employees);
+        } catch (\Exception $e) {
+            return error('Error Finding Employees: ' . $e->getMessage());
+        }
     }
+
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
     {
         try {
-            $cmpEmployee = $request->validate([
+            $request->validate([
                 'first_name' => 'required|string',
                 'last_name' => 'required|string',
                 'email' => 'required|email|unique:users,email',
@@ -58,23 +62,11 @@ class CompanyEmployeeController extends Controller
                 'joining_date' => 'required|date',
                 'company_name' => 'required|string',
             ]);
-            $company = Company::where('name', $cmpEmployee['company_name'])->first();
-            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
-            $employee = User::create([
-                'first_name' => $cmpEmployee['first_name'],
-                'last_name' => $cmpEmployee['last_name'],
-                'email' => $cmpEmployee['email'],
-                'role' => 'employee',
-                'password' => bcrypt($cmpEmployee['password']),
-                'joining_date' => $cmpEmployee['joining_date'],
-                'company_id' => $company->id,
-                'emp_number' => $employeeNumber,
-            ]);
 
-            $preference = Preferences::updateOrCreate([
-                'code' => 'EMP',
-                'value' => (int) substr($employeeNumber, $company->id),
-            ]);
+            $company = Company::where('name', $request['company_name'])->first();
+            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
+            $employee = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'employee'] + ['password' => bcrypt($request['password'])] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber]);
+
             return ok('Employee Registered Successfully', $employee);
         } catch (\Exception $e) {
             return error('Error Registering Employee: ' . $e->getMessage());
@@ -109,13 +101,7 @@ class CompanyEmployeeController extends Controller
                 'email' => ['required', 'string', 'email', Rule::unique('users')->ignore($id)],
                 'joining_date' => 'required|date',
             ]);
-
-            $employee->update([
-                'first_name' => $cmpEmployee['first_name'],
-                'last_name' => $cmpEmployee['last_name'],
-                'email' => $cmpEmployee['email'],
-                'joining_date' => $cmpEmployee['joining_date'],
-            ]);
+            $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
             return ok('Employee Updated Successfully', $employee);
         } catch (\Exception $e) {
             return error('Error Updating Employee: ' . $e->getMessage());
