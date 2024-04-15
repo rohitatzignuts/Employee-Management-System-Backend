@@ -27,6 +27,19 @@ class JobController extends Controller
     }
 
     /**
+     * Display a listing of the resource by company.
+     */
+    public function companyJobs(string $id)
+    {
+        $jobs = Job::where('company_id', $id)->get();
+        foreach ($jobs as $job) {
+            $job->makeHidden('company');
+            $job->company_name = $job->company->name;
+        }
+        return $jobs;
+    }
+
+    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -40,7 +53,7 @@ class JobController extends Controller
             ]);
             $company_id = Company::where('name', $request['company_name'])->first()->id;
             $job = Job::create($request->only(['title', 'description', 'location', 'pay']) + ['created_by' => auth()->user()->id] + ['company_id' => $company_id]);
-            return ok('Jon Created Successfully', $job);
+            return ok('Job Created Successfully', $job, 200);
         } catch (\Exception $e) {
             return error('Error Creating Job : ' . $e->getMessage());
         }
@@ -53,6 +66,8 @@ class JobController extends Controller
     {
         try {
             $job = Job::findOrFail($id);
+            $job->company_name = $job->company->name;
+            $job->makeHidden('company');
             return response()->json($job);
         } catch (ModelNotFoundException $e) {
             return response()->json(
@@ -78,7 +93,7 @@ class JobController extends Controller
                 'pay' => 'required|string',
             ]);
             $job->update($request->all());
-            return ok('Jon Updated Successfully', $job);
+            return ok('Job Updated Successfully', $job, 200);
         } catch (\Exception $e) {
             return error('Error Updating Job : ' . $e->getMessage());
         }
@@ -87,7 +102,7 @@ class JobController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request,string $id)
+    public function destroy(Request $request, string $id)
     {
         try {
             $job = Job::findOrFail($id);
@@ -103,7 +118,7 @@ class JobController extends Controller
                 // Soft delete the company and associated users
                 $job->delete();
             }
-            return ok('Job deleted successfully');
+            return ok('Job deleted successfully', 200);
         } catch (ModelNotFoundException $e) {
             return error('Error deleting Job: ' . $e->getMessage());
         }

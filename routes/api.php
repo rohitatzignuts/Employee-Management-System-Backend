@@ -29,7 +29,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/logout', [UserAuthController::class, 'logout']);
     // company routes
     Route::middleware(['checkRole:admin'])->group(function () {
-        Route::get('/companies', [CompanyController::class, 'index']);
+        Route::get('/companies/search', [CompanyController::class, 'index']);
         Route::get('/company/{id}', [CompanyController::class, 'show']);
         Route::post('/company/create', [CompanyController::class, 'store']);
         Route::delete('/company/{id}', [CompanyController::class, 'destroy']);
@@ -50,6 +50,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // jobs routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
         Route::get('/job/{id}', [JobController::class, 'show']);
+        Route::get('{id}/jobs/', [JobController::class, 'companyJobs']);
         Route::post('/job/create', [JobController::class, 'store']);
         Route::post('/job/update/{id}', [JobController::class, 'update']);
         Route::delete('/job/{id}', [JobController::class, 'destroy']);

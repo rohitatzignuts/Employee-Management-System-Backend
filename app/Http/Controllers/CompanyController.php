@@ -28,13 +28,35 @@ class CompanyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $companies = Company::all()->toArray();
-        $companies = array_slice($companies, 1); // Remove the first element (no related user data)
-        return $companies;
-        // return Company::withTrashed()->get();
+        try {
+            if ($request->has('term')) {
+                $term = $request->input('term');
+                $companies = Company::where('name', 'like', '%' . $term . '%')->get();
+                if ($companies->isEmpty()) {
+                    return response()->json(
+                        [
+                            'message' => 'Company not found',
+                        ],
+                        404,
+                    );
+                }
+                return $companies;
+            } else {
+                $companies = Company::all();
+                return $companies;
+            }
+        } catch (\Exception $e) {
+            return response()->json(
+                [
+                    'message' => 'Error getting results: ' . $e->getMessage(),
+                ],
+                500,
+            );
+        }
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -51,7 +73,6 @@ class CompanyController extends Controller
                 'first_name' => 'required|string',
                 'last_name' => 'required|string',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:8',
                 'joining_date' => 'required|date',
             ]);
 
@@ -61,16 +82,14 @@ class CompanyController extends Controller
             $logoPath = str_replace('public/', '', $logoPath);
             $company = Company::create($request->only(['name', 'website', 'cmp_email', 'location']) + ['logo' => $logoPath] + ['created_by' => auth()->user()->id]);
             $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber();
-            $user = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'cmp_admin'] + ['password' => bcrypt($request['password'])] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber] + ['created_by' => auth()->user()->id]);
-
+            $user = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'cmp_admin'] + ['password' => bcrypt('password')] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber] + ['created_by' => auth()->user()->id]);
             $mailData = [
                 'company_name' => $request['name'],
                 'email' => $request['email'],
-                'password' => $request['password'],
+                'password' => 'password',
             ];
-
             Mail::to($request['email'])->send(new LoginMail($mailData));
-            return ok('Company Created Successfully', $company);
+            return ok('Company Created Successfully', $company, 200);
         } catch (\Exception $e) {
             return error('Error creating company: ' . $e->getMessage());
         }
@@ -119,10 +138,9 @@ class CompanyController extends Controller
 
             // Update or create the user (admin) data
             $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
-
-            return response()->json(['status' => 200, 'message' => 'Company Updated Successfully', 'data' => $company]);
+            return ok('Company Updated Successfully', $company, 200);
         } catch (\Exception $e) {
-            return response()->json(['status' => 500, 'message' => 'Error Updating company: ' . $e->getMessage(), 'data' => []]);
+            return error('Error Finding company: ' . $e->getMessage());
         }
     }
 
@@ -152,7 +170,7 @@ class CompanyController extends Controller
                 }
             }
 
-            return ok('Company and associated users deleted successfully');
+            return ok('Company and associated users deleted successfully', 200);
         } catch (ModelNotFoundException $e) {
             return error('Error deleting company and associated users: ' . $e->getMessage());
         }

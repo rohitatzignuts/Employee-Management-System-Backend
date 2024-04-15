@@ -42,7 +42,7 @@ class CompanyEmployeeController extends Controller
             $company = Company::findOrFail($id);
             // Get the employees of the company
             $employees = User::where('company_id', $company->id)->get();
-            return ok('Employees Found Successfully', $employees);
+            return ok('Employees Found Successfully', $employees, 200);
         } catch (\Exception $e) {
             return error('Error Finding Employees: ' . $e->getMessage());
         }
@@ -58,16 +58,15 @@ class CompanyEmployeeController extends Controller
                 'first_name' => 'required|string',
                 'last_name' => 'required|string',
                 'email' => 'required|email|unique:users,email',
-                'password' => 'required|min:8',
                 'joining_date' => 'required|date',
                 'company_name' => 'required|string',
             ]);
 
             $company = Company::where('name', $request['company_name'])->first();
             $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
-            $employee = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'employee'] + ['password' => bcrypt($request['password'])] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber]);
+            $employee = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'employee'] + ['password' => 'password'] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber]);
 
-            return ok('Employee Registered Successfully', $employee);
+            return ok('Employee Registered Successfully', $employee, 200);
         } catch (\Exception $e) {
             return error('Error Registering Employee: ' . $e->getMessage());
         }
@@ -80,9 +79,9 @@ class CompanyEmployeeController extends Controller
     {
         try {
             $employee = User::findOrFail($id);
-            return response()->json([
-                'employee' => $employee,
-            ]);
+            $employee->company_name = $employee->company->name;
+            $employee->makeHidden('company');
+            return ok('Employee Found !', $employee, 200);
         } catch (ModelNotFoundException $e) {
             return error('Error Finding employee: ' . $e->getMessage());
         }
@@ -102,7 +101,7 @@ class CompanyEmployeeController extends Controller
                 'joining_date' => 'required|date',
             ]);
             $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
-            return ok('Employee Updated Successfully', $employee);
+            return ok('Employee Updated Successfully', $employee, 200);
         } catch (\Exception $e) {
             return error('Error Updating Employee: ' . $e->getMessage());
         }
@@ -127,7 +126,7 @@ class CompanyEmployeeController extends Controller
                 // Soft delete the Employee
                 $user->delete();
             }
-            return ok('Employee deleted successfully');
+            return ok('Employee deleted successfully', 200);
         } catch (ModelNotFoundException $e) {
             return error('Error deleting Employee: ' . $e->getMessage());
         }
