@@ -21,7 +21,7 @@ use App\Http\Controllers\CompanyEmployeeController;
 // public routes
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
-Route::get('/jobs', [JobController::class, 'index']);
+Route::get('/jobs/search', [JobController::class, 'index']);
 
 // Protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -34,13 +34,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::post('/company/create', [CompanyController::class, 'store']);
         Route::delete('/company/{id}', [CompanyController::class, 'destroy']);
         Route::post('/company/update/{id}', [CompanyController::class, 'update']);
-        Route::get('/company/search/{name}', [CompanyController::class, 'search']);
     });
 
     // company emoloyee routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
-        Route::get('/employees', [CompanyEmployeeController::class, 'index']);
-        Route::get('/{id}/employees', [CompanyEmployeeController::class, 'companyEmployees']);
+        Route::get('/employees/search', [CompanyEmployeeController::class, 'index']);
+        Route::get('/{id}/employees/search', [CompanyEmployeeController::class, 'companyEmployees']);
         Route::get('/employee/{id}', [CompanyEmployeeController::class, 'show']);
         Route::post('/employee/create', [CompanyEmployeeController::class, 'store']);
         Route::post('/employee/update/{id}', [CompanyEmployeeController::class, 'update']);
@@ -50,10 +49,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // jobs routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
         Route::get('/job/{id}', [JobController::class, 'show']);
-        Route::get('{id}/jobs/', [JobController::class, 'companyJobs']);
+        Route::get('{id}/jobs/search', [JobController::class, 'companyJobs']);
         Route::post('/job/create', [JobController::class, 'store']);
         Route::post('/job/update/{id}', [JobController::class, 'update']);
         Route::delete('/job/{id}', [JobController::class, 'destroy']);
-        Route::get('/job/search/{title}', [JobController::class, 'search']);
     });
 });

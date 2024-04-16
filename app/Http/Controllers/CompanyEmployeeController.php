@@ -22,29 +22,60 @@ class CompanyEmployeeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $employees = User::whereIn('role', ['cmp_admin', 'employee'])->get();
+        try {
+            if ($request->has('term')) {
+                $term = $request->input('term');
+                $employees = User::with('company')
+                    ->whereIn('role', ['cmp_admin', 'employee'])
+                    ->where('first_name', 'like', '%' . $term . '%')
+                    ->get();
+            } else {
+                $employees = User::with('company')
+                    ->whereIn('role', ['cmp_admin', 'employee'])
+                    ->get();
+            }
 
-        foreach ($employees as $employee) {
-            $employee->company_name = $employee->company->name;
+            $employees->transform(function ($employee) {
+                $employee->company_name = $employee->company->name;
+                unset($employee->company);
+                return $employee;
+            });
+
+            if ($employees->isEmpty()) {
+                return [];
+            }
+
+            return $employees;
+        } catch (\Exception $e) {
+            return error('Error getting companies: ' . $e->getMessage());
         }
-
-        return $employees;
     }
 
     /**
      * Display a listing of the resource by companyId
      */
-    public function companyEmployees(string $id)
+    public function companyEmployees(string $id, Request $request)
     {
         try {
             $company = Company::findOrFail($id);
-            // Get the employees of the company
-            $employees = User::where('company_id', $company->id)->get();
-            return ok('Employees Found Successfully', $employees, 200);
+
+            if ($request->has('term')) {
+                $term = $request->input('term');
+                $employees = User::where('company_id', $company->id)
+                    ->where('first_name', 'like', '%' . $term . '%')
+                    ->get();
+            } else {
+                $employees = User::where('company_id', $company->id)->get();
+            }
+
+            if ($employees->isEmpty()) {
+                return [];
+            }
+            return ok('Employee Registered Successfully', $employees, 200);
         } catch (\Exception $e) {
-            return error('Error Finding Employees: ' . $e->getMessage());
+            return error('Error getting employees: ' . $e->getMessage());
         }
     }
 

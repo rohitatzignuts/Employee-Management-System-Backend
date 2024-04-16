@@ -16,27 +16,60 @@ class JobController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $jobs = Job::all();
-        foreach ($jobs as $job) {
-            $job->makeHidden('company');
-            $job->company_name = $job->company->name;
-        }
-        return $jobs;
-    }
+        try {
+            if ($request->has('term')) {
+                $term = $request->input('term');
+                $jobs = Job::with('company')
+                    ->where('title', 'like', '%' . $term . '%')
+                    ->get();
+            } else {
+                $jobs = Job::all();
+            }
 
+            $jobs->transform(function ($job) {
+                $job->company_name = $job->company->name;
+                unset($job->company);
+                return $job;
+            });
+
+            if ($jobs->isEmpty()) {
+                return [];
+            }
+            return $jobs;
+        } catch (\Exception $e) {
+            return error('Error getting jobs: ' . $e->getMessage());
+        }
+    }
     /**
      * Display a listing of the resource by company.
      */
-    public function companyJobs(string $id)
+    public function companyJobs(string $id, Request $request)
     {
-        $jobs = Job::where('company_id', $id)->get();
-        foreach ($jobs as $job) {
-            $job->makeHidden('company');
-            $job->company_name = $job->company->name;
+        try {
+            if ($request->has('term')) {
+                $term = $request->input('term');
+                $jobs = Job::where('company_id', $id)
+                    ->where('title', 'like', '%' . $term . '%')
+                    ->get();
+            } else {
+                $jobs = Job::where('company_id', $id)->get();
+            }
+
+            $jobs->transform(function ($job) {
+                $job->company_name = $job->company->name;
+                unset($job->company);
+                return $job;
+            });
+
+            if ($jobs->isEmpty()) {
+                return [];
+            }
+            return $jobs;
+        } catch (\Exception $e) {
+            return error('Error getting jobs: ' . $e->getMessage());
         }
-        return $jobs;
     }
 
     /**

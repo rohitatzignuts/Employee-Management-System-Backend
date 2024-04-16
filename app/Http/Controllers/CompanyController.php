@@ -35,12 +35,7 @@ class CompanyController extends Controller
                 $term = $request->input('term');
                 $companies = Company::where('name', 'like', '%' . $term . '%')->get();
                 if ($companies->isEmpty()) {
-                    return response()->json(
-                        [
-                            'message' => 'Company not found',
-                        ],
-                        404,
-                    );
+                    return [];
                 }
                 return $companies;
             } else {
@@ -48,15 +43,9 @@ class CompanyController extends Controller
                 return $companies;
             }
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'message' => 'Error getting results: ' . $e->getMessage(),
-                ],
-                500,
-            );
+            return error('Error getting companies: ' . $e->getMessage());
         }
     }
-
 
     /**
      * Store a newly created resource in storage.
