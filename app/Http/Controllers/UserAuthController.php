@@ -64,13 +64,13 @@ class UserAuthController extends Controller
                     401,
                 );
             }
-            $token = $user->createToken($user->name . '-AuthToken')->plainTextToken;
+            $token = $user->createToken('LoginToken')->plainTextToken;
             return response()->json([
                 'message' => 'Logged in successfully',
                 'access_token' => $token,
                 'role' => $user->role,
-                'company_id' => $user->company_id,
-                'company_name' => $user->company->name,
+                'company_id' => $user->company_id ?? null,
+                'company_name' => $user->company ? $user->company->name : null,
             ]);
         } catch (\Exception $e) {
             return response()->json(

@@ -31,17 +31,26 @@ class CompanyController extends Controller
     public function index(Request $request)
     {
         try {
+            $query = Company::query();
+
             if ($request->has('term')) {
                 $term = $request->input('term');
-                $companies = Company::where('name', 'like', '%' . $term . '%')->get();
-                if ($companies->isEmpty()) {
-                    return [];
-                }
-                return $companies;
-            } else {
-                $companies = Company::all();
-                return $companies;
+                $query->where('name', 'like', '%' . $request->input('term') . '%');
             }
+
+            if ($request->has('status')) {
+                $status = $request->input('status');
+                $statusValue = $status === 'active' ? 1 : 0;
+                $query->where('is_active', $statusValue);
+            }
+
+            $companies = $query->get();
+
+            if ($companies->isEmpty()) {
+                return [];
+            }
+
+            return ok('Companies fetched Successfully: ', $companies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
         }
@@ -162,27 +171,6 @@ class CompanyController extends Controller
             return ok('Company and associated users deleted successfully', 200);
         } catch (ModelNotFoundException $e) {
             return error('Error deleting company and associated users: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Search for a name
-     */
-    public function search(string $name)
-    {
-        try {
-            $companies = Company::where('name', 'like', '%' . $name . '%')->get();
-            if ($companies->isEmpty()) {
-                return response()->json(
-                    [
-                        'message' => 'Company not found',
-                    ],
-                    404,
-                );
-            }
-            return $companies;
-        } catch (\Exception $e) {
-            return error('Error Finding company: ' . $e->getMessage());
         }
     }
 }

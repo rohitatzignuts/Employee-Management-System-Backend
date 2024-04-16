@@ -23,7 +23,7 @@ class UserSeeder extends Seeder
             'role' => 'admin',
             'email' => $userEmail,
             'password' => $password,
-            'company_id' => 1,
+            'company_id' => null,
             'emp_number' => null,
             'joining_date' => null,
             'created_at' => now(),

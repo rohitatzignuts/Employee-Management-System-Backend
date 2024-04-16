@@ -19,6 +19,7 @@ class JobController extends Controller
     public function index(Request $request)
     {
         try {
+
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $jobs = Job::with('company')
@@ -42,6 +43,7 @@ class JobController extends Controller
             return error('Error getting jobs: ' . $e->getMessage());
         }
     }
+
     /**
      * Display a listing of the resource by company.
      */
@@ -157,20 +159,4 @@ class JobController extends Controller
         }
     }
 
-    /**
-     * Search for a name
-     */
-    public function search(string $title)
-    {
-        try {
-            return Job::where('title', 'like', '%' . $title . '%')->get();
-        } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'message' => 'An error occurred: ' . $e->getMessage(),
-                ],
-                500,
-            );
-        }
-    }
 }

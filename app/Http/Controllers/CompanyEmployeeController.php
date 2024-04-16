@@ -25,17 +25,19 @@ class CompanyEmployeeController extends Controller
     public function index(Request $request)
     {
         try {
+            $query = User::with('company')->whereIn('role', ['cmp_admin', 'employee']);
+
             if ($request->has('term')) {
                 $term = $request->input('term');
-                $employees = User::with('company')
-                    ->whereIn('role', ['cmp_admin', 'employee'])
-                    ->where('first_name', 'like', '%' . $term . '%')
-                    ->get();
-            } else {
-                $employees = User::with('company')
-                    ->whereIn('role', ['cmp_admin', 'employee'])
-                    ->get();
+                $query->where('first_name', 'like', '%' . $term . '%');
             }
+
+            if ($request->has('status')) {
+                $status = $request->input('status');
+                $query->where('role', $status);
+            }
+
+            $employees = $query->get();
 
             $employees->transform(function ($employee) {
                 $employee->company_name = $employee->company->name;
