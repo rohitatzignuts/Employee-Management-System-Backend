@@ -1,15 +1,19 @@
-# Installation
+# Employee Management System Backend
 
-### First clone this repository, install the dependencies
+#### This is the backend implementation for the Employee Management System project.
 
-```git clone https://github.com/rohitatzignuts/Employee-Management-System-Backend```
-``` composer install```
+## Installation
 
-### Then create the necessary database.
-```create a new database 'laravel' using Mysql```
+### Clone the Repository and Install Dependencies
+`git clone https://github.com/rohitatzignuts/Employee-Management-System-Backend`
+`composer install`
 
-### And run the initial migrations and seeders.
-```php artisan migrate --seed```
+### Create Database
+#### Create a new database named laravel using MySQL.
 
-### And then serve the project with
-```php artisan serve```
+### Run Migrations and Seeders
+`php artisan migrate --seed`
+
+### Serve the Project
+`php artisan serve`
+
