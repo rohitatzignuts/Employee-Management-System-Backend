@@ -7,6 +7,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use App\Models\User;
+require_once app_path('Http/Helpers/APIResponse.php');
 
 class UserAuthController extends Controller
 {
@@ -28,12 +29,7 @@ class UserAuthController extends Controller
                 'email' => $registerUserData['email'],
                 'password' => bcrypt($registerUserData['password']),
             ]);
-            return response()->json(
-                [
-                    'message' => 'User Registred Successfully',
-                ],
-                201,
-            );
+            return ok('User Registred Successfully');
         } catch (\Exception $e) {
             return response()->json(
                 [
@@ -55,15 +51,12 @@ class UserAuthController extends Controller
                 'email' => 'required|string|email',
                 'password' => 'required|min:8',
             ]);
+            // Check Credentials
             $user = User::where('email', $loginUserData['email'])->first();
             if (!$user || !Hash::check($loginUserData['password'], $user->password)) {
-                return response()->json(
-                    [
-                        'message' => 'Invalid Credentials',
-                    ],
-                    401,
-                );
+                return error('Invalid Credentials');
             }
+            // Create Token
             $token = $user->createToken('LoginToken')->plainTextToken;
             return response()->json([
                 'message' => 'Logged in successfully',
@@ -73,13 +66,7 @@ class UserAuthController extends Controller
                 'company_name' => $user->company ? $user->company->name : null,
             ]);
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'message' => 'An error occurred',
-                    'error' => $e->getMessage(),
-                ],
-                500,
-            );
+            return error('An error occurred', $e->getMessage());
         }
     }
 
@@ -96,27 +83,14 @@ class UserAuthController extends Controller
             ]);
             $user = User::where('email', $loginUserData['email'])->first();
             if (!$user || !Hash::check($loginUserData['oldPassword'], $user->password)) {
-                return response()->json(
-                    [
-                        'message' => 'Invalid Credentials',
-                    ],
-                    401,
-                );
+                return error('Invalid Credentials');
             }
             $user->update([
                 'password' => bcrypt($loginUserData['newPassword']),
             ]);
-            return response()->json([
-                'message' => 'Password reset successfully',
-            ]);
+            return ok('Password reset successfully');
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'message' => 'An error occurred',
-                    'error' => $e->getMessage(),
-                ],
-                500,
-            );
+            return error('An error occurred', $e->getMessage());
         }
     }
 
@@ -127,17 +101,9 @@ class UserAuthController extends Controller
     {
         try {
             auth()->user()->tokens()->delete();
-            return response()->json([
-                'message' => 'Logged out',
-            ]);
+            return ok('Logged out SuccessFully!');
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'message' => 'Failed to logout',
-                    'error' => $e->getMessage(),
-                ],
-                500,
-            );
+            return error('An error occurred', $e->getMessage());
         }
     }
 }

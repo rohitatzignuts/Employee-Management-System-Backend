@@ -22,6 +22,6 @@ class LoginMail extends Mailable
     public function build()
     {
         return $this->subject('Login Creds')
-                    ->view('emails.login'); // Create a corresponding view file in resources/views/emails
+                    ->view('emails.login');
     }
 }

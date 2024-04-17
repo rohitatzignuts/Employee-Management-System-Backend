@@ -21,15 +21,17 @@ use App\Http\Controllers\CompanyEmployeeController;
 // public routes
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
-Route::get('/jobs/search', [JobController::class, 'index']);
+Route::get('/jobs', [JobController::class, 'index']);
+Route::get('/registeredCompanies',[CompanyController::class,'registeredCompanies']);
 
 // Protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('/resetPassword', [UserAuthController::class, 'resetPassword']);
     Route::post('/logout', [UserAuthController::class, 'logout']);
+
     // company routes
     Route::middleware(['checkRole:admin'])->group(function () {
-        Route::get('/companies/search', [CompanyController::class, 'index']);
+        Route::get('/companies', [CompanyController::class, 'index']);
         Route::get('/company/{id}', [CompanyController::class, 'show']);
         Route::post('/company/create', [CompanyController::class, 'store']);
         Route::delete('/company/{id}', [CompanyController::class, 'destroy']);
@@ -38,8 +40,8 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // company emoloyee routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
-        Route::get('/employees/search', [CompanyEmployeeController::class, 'index']);
-        Route::get('/{id}/employees/search', [CompanyEmployeeController::class, 'companyEmployees']);
+        Route::get('/employees', [CompanyEmployeeController::class, 'index']);
+        Route::get('/{id}/employees', [CompanyEmployeeController::class, 'companyEmployees']);
         Route::get('/employee/{id}', [CompanyEmployeeController::class, 'show']);
         Route::post('/employee/create', [CompanyEmployeeController::class, 'store']);
         Route::post('/employee/update/{id}', [CompanyEmployeeController::class, 'update']);

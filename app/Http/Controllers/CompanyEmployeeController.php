@@ -15,23 +15,29 @@ class CompanyEmployeeController extends Controller
 {
     protected $employeeService;
 
+    /**
+     * Register EmployeeService
+     */
     public function __construct(EmployeeService $employeeService)
     {
         $this->employeeService = $employeeService;
     }
+
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource on the basis of search term and filter status if not given return all
      */
     public function index(Request $request)
     {
         try {
             $query = User::with('company')->whereIn('role', ['cmp_admin', 'employee']);
 
+            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $query->where('first_name', 'like', '%' . $term . '%');
             }
 
+            // filter list on status
             if ($request->has('status')) {
                 $status = $request->input('status');
                 $query->where('role', $status);
@@ -39,6 +45,7 @@ class CompanyEmployeeController extends Controller
 
             $employees = $query->get();
 
+            // add company_name to the employee object and remove extra company details
             $employees->transform(function ($employee) {
                 $employee->company_name = $employee->company->name;
                 unset($employee->company);
@@ -63,6 +70,7 @@ class CompanyEmployeeController extends Controller
         try {
             $company = Company::findOrFail($id);
 
+            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $employees = User::where('company_id', $company->id)

@@ -18,6 +18,9 @@ require_once app_path('Http/Helpers/APIResponse.php');
 
 class CompanyController extends Controller
 {
+    /**
+     * Register EmployeeService
+     */
     protected $employeeService;
 
     public function __construct(EmployeeService $employeeService)
@@ -26,18 +29,20 @@ class CompanyController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource on the basis of search term and filter status if not given return all
      */
     public function index(Request $request)
     {
         try {
             $query = Company::query();
 
+            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $query->where('name', 'like', '%' . $request->input('term') . '%');
             }
 
+            // filter list on status
             if ($request->has('status')) {
                 $status = $request->input('status');
                 $statusValue = $status === 'active' ? 1 : 0;
@@ -78,14 +83,18 @@ class CompanyController extends Controller
             $logoPath = $request->file('logo')->store('public/logos');
             // Remove the 'public/' prefix from the path
             $logoPath = str_replace('public/', '', $logoPath);
+
             $company = Company::create($request->only(['name', 'website', 'cmp_email', 'location']) + ['logo' => $logoPath] + ['created_by' => auth()->user()->id]);
             $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber();
             $user = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'cmp_admin'] + ['password' => bcrypt('password')] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber] + ['created_by' => auth()->user()->id]);
+
             $mailData = [
                 'company_name' => $request['name'],
                 'email' => $request['email'],
                 'password' => 'password',
             ];
+
+            //send mail to the company admin with email and password
             Mail::to($request['email'])->send(new LoginMail($mailData));
             return ok('Company Created Successfully', $company, 200);
         } catch (\Exception $e) {
@@ -99,12 +108,8 @@ class CompanyController extends Controller
     public function show(string $id)
     {
         try {
-            $company = Company::with('companyAdmin')->findOrFail($id);
-            $adminUser = $company->companyAdmin;
-            return response()->json([
-                'company' => $company,
-                'employee' => $adminUser,
-            ]);
+            $companyData = Company::with('companyAdmin')->findOrFail($id);
+            return ok('Company Data Found !!', $companyData);
         } catch (ModelNotFoundException $e) {
             return error('Error Finding company: ' . $e->getMessage());
         }
@@ -171,6 +176,19 @@ class CompanyController extends Controller
             return ok('Company and associated users deleted successfully', 200);
         } catch (ModelNotFoundException $e) {
             return error('Error deleting company and associated users: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     *return all the registered companies
+     */
+    public function registeredCompanies()
+    {
+        try {
+            $companies = Company::all()->pluck('name');
+            return $companies;
+        } catch (\Exception $e) {
+            return error('Error getting companies: ' . $e->getMessage());
         }
     }
 }

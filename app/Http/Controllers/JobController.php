@@ -14,20 +14,20 @@ require_once app_path('Http/Helpers/APIResponse.php');
 class JobController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of the resource on the basis of search term and filter status if not given return all
      */
     public function index(Request $request)
     {
         try {
+            $query = Job::query();
 
+            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
-                $jobs = Job::with('company')
-                    ->where('title', 'like', '%' . $term . '%')
-                    ->get();
-            } else {
-                $jobs = Job::all();
+                $query->where('title', 'like', '%' . $term . '%');
             }
+
+            $jobs = $query->get();
 
             $jobs->transform(function ($job) {
                 $job->company_name = $job->company->name;
@@ -35,9 +35,16 @@ class JobController extends Controller
                 return $job;
             });
 
+            // filter list on company name
+            if ($request->has('company')) {
+                $company = $request->input('company');
+                $jobs = $jobs->where('company_name', $company);
+            }
+
             if ($jobs->isEmpty()) {
                 return [];
             }
+
             return $jobs;
         } catch (\Exception $e) {
             return error('Error getting jobs: ' . $e->getMessage());
@@ -50,6 +57,7 @@ class JobController extends Controller
     public function companyJobs(string $id, Request $request)
     {
         try {
+            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $jobs = Job::where('company_id', $id)
@@ -59,6 +67,7 @@ class JobController extends Controller
                 $jobs = Job::where('company_id', $id)->get();
             }
 
+            // add company_name to the returning job object and remove extra company data
             $jobs->transform(function ($job) {
                 $job->company_name = $job->company->name;
                 unset($job->company);
@@ -103,14 +112,9 @@ class JobController extends Controller
             $job = Job::findOrFail($id);
             $job->company_name = $job->company->name;
             $job->makeHidden('company');
-            return response()->json($job);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(
-                [
-                    'message' => 'Job not found',
-                ],
-                404,
-            );
+            return ok('Job Found !', $job);
+        } catch (Exception $e) {
+            return error('Job not Found ! : ' . $e->getMessage());
         }
     }
 
@@ -158,5 +162,4 @@ class JobController extends Controller
             return error('Error deleting Job: ' . $e->getMessage());
         }
     }
-
 }
