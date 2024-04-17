@@ -44,8 +44,9 @@ class JobController extends Controller
             if ($jobs->isEmpty()) {
                 return [];
             }
-
-            return $jobs;
+            //convert the collection to a plain array:
+            $jobs = $jobs->values();
+            return ok('Jobs Found!', $jobs);
         } catch (\Exception $e) {
             return error('Error getting jobs: ' . $e->getMessage());
         }
@@ -57,7 +58,6 @@ class JobController extends Controller
     public function companyJobs(string $id, Request $request)
     {
         try {
-            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $jobs = Job::where('company_id', $id)
