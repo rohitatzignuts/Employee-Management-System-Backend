@@ -33,14 +33,12 @@ class CompanyEmployeeController extends Controller
 
             // filter list on term
             if ($request->has('term')) {
-                $term = $request->input('term');
-                $query->where('first_name', 'like', '%' . $term . '%');
+                $query->where('first_name', 'like', '%' . $request->input('term') . '%');
             }
 
             // filter list on status
             if ($request->has('status')) {
-                $status = $request->input('status');
-                $query->where('role', $status);
+                $query->where('role', $request->input('status'));
             }
 
             $employees = $query->get();
@@ -53,12 +51,12 @@ class CompanyEmployeeController extends Controller
             });
 
             if ($employees->isEmpty()) {
-                return [];
+                return ok('No Data For Now !', []);
             }
 
-            return $employees;
+            return ok('Employees Found!!', $employees);
         } catch (\Exception $e) {
-            return error('Error getting companies: ' . $e->getMessage());
+            return error('Error getting employees: ' . $e->getMessage());
         }
     }
 
@@ -72,16 +70,15 @@ class CompanyEmployeeController extends Controller
 
             // filter list on term
             if ($request->has('term')) {
-                $term = $request->input('term');
                 $employees = User::where('company_id', $company->id)
-                    ->where('first_name', 'like', '%' . $term . '%')
+                    ->where('first_name', 'like', '%' . $request->input('term') . '%')
                     ->get();
             } else {
                 $employees = User::where('company_id', $company->id)->get();
             }
 
             if ($employees->isEmpty()) {
-                return [];
+                return ok('No Data For Now !', []);
             }
             return ok('Employee Registered Successfully', $employees, 200);
         } catch (\Exception $e) {
@@ -105,7 +102,14 @@ class CompanyEmployeeController extends Controller
 
             $company = Company::where('name', $request['company_name'])->first();
             $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
-            $employee = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'employee'] + ['password' => 'password'] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber]);
+            $employee = User::create(
+                $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
+                    'role' => 'employee',
+                    'password' => 'password',
+                    'company_id' => $company->id,
+                    'emp_number' => $employeeNumber,
+                ],
+            );
 
             return ok('Employee Registered Successfully', $employee, 200);
         } catch (\Exception $e) {

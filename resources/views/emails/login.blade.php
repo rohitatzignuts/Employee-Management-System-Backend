@@ -15,7 +15,7 @@
                     </ul>
                 </div>
                 <div>
-                    <a href="http://localhost:5173/login" class="card-link">Login..</a>
+                    <a href="{{ $mailData['loginLink'] }}" class="card-link">Login..</a>
                 </div>
             </div>
         </div>

@@ -38,21 +38,22 @@ class CompanyController extends Controller
 
             // filter list on term
             if ($request->has('term')) {
-                $term = $request->input('term');
                 $query->where('name', 'like', '%' . $request->input('term') . '%');
             }
 
             // filter list on status
             if ($request->has('status')) {
-                $status = $request->input('status');
-                $statusValue = $status === 'active' ? 1 : 0;
+                $statusValue = $request->input('status') === 'active' ? 1 : 0;
                 $query->where('is_active', $statusValue);
             }
 
-            $companies = $query->get();
+            $companies = $query
+                ->skip(1)
+                ->take(PHP_INT_MAX)
+                ->get();
 
             if ($companies->isEmpty()) {
-                return [];
+                return ok('No Data for Now: ', []);
             }
 
             return ok('Companies fetched Successfully: ', $companies);
@@ -69,7 +70,6 @@ class CompanyController extends Controller
         try {
             $request->validate([
                 'name' => 'required|string',
-                'logo' => 'mimes:jpg,jpeg,png|max:2048',
                 'website' => 'required|string',
                 'cmp_email' => 'required|string|email|unique:companies',
                 'location' => 'required|string',
@@ -80,23 +80,40 @@ class CompanyController extends Controller
             ]);
 
             // Save the uploaded logo file
-            $logoPath = $request->file('logo')->store('public/logos');
-            // Remove the 'public/' prefix from the path
-            $logoPath = str_replace('public/', '', $logoPath);
+            if ($request->file('logo')) {
+                $logoPath = $request->file('logo')->store('public/logos');
+                // Remove the 'public/' prefix from the path
+                $logoPath = str_replace('public/', '', $logoPath);
+            }
 
-            $company = Company::create($request->only(['name', 'website', 'cmp_email', 'location']) + ['logo' => $logoPath] + ['created_by' => auth()->user()->id]);
+            $company = Company::create(
+                $request->only(['name', 'website', 'cmp_email', 'location']) + [
+                    'logo' => $logoPath ?? null,
+                    'created_by' => auth()->user()->id,
+                ],
+            );
+
             $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber();
-            $user = User::create($request->only(['first_name', 'last_name', 'email', 'joining_date']) + ['role' => 'cmp_admin'] + ['password' => bcrypt('password')] + ['company_id' => $company->id] + ['emp_number' => $employeeNumber] + ['created_by' => auth()->user()->id]);
+            $user = User::create(
+                $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
+                    'role' => 'cmp_admin',
+                    'password' => bcrypt('password'),
+                    'company_id' => $company->id,
+                    'emp_number' => $employeeNumber,
+                    'created_by' => auth()->user()->id,
+                ],
+            );
 
             $mailData = [
                 'company_name' => $request['name'],
                 'email' => $request['email'],
                 'password' => 'password',
+                'loginLink' => env('LOGIN_URL')
             ];
 
             //send mail to the company admin with email and password
             Mail::to($request['email'])->send(new LoginMail($mailData));
-            return ok('Company Created Successfully', $company, 200);
+            return ok('Company Created Successfully', $company);
         } catch (\Exception $e) {
             return error('Error creating company: ' . $e->getMessage());
         }
@@ -141,7 +158,7 @@ class CompanyController extends Controller
 
             // Update or create the user (admin) data
             $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
-            return ok('Company Updated Successfully', $company, 200);
+            return ok('Company Updated Successfully', $company);
         } catch (\Exception $e) {
             return error('Error Finding company: ' . $e->getMessage());
         }
@@ -186,7 +203,7 @@ class CompanyController extends Controller
     {
         try {
             $companies = Company::all()->pluck('name');
-            return $companies;
+            return ok('Companies Found !!', $companies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
         }

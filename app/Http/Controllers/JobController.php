@@ -23,8 +23,7 @@ class JobController extends Controller
 
             // filter list on term
             if ($request->has('term')) {
-                $term = $request->input('term');
-                $query->where('title', 'like', '%' . $term . '%');
+                $query->where('title', 'like', '%' . $request->input('term') . '%');
             }
 
             $jobs = $query->get();
@@ -42,7 +41,7 @@ class JobController extends Controller
             }
 
             if ($jobs->isEmpty()) {
-                return [];
+                return ok('No Data For Now !', []);
             }
             //convert the collection to a plain array:
             $jobs = $jobs->values();
@@ -59,9 +58,8 @@ class JobController extends Controller
     {
         try {
             if ($request->has('term')) {
-                $term = $request->input('term');
                 $jobs = Job::where('company_id', $id)
-                    ->where('title', 'like', '%' . $term . '%')
+                    ->where('title', 'like', '%' . $request->input('term') . '%')
                     ->get();
             } else {
                 $jobs = Job::where('company_id', $id)->get();
@@ -75,9 +73,9 @@ class JobController extends Controller
             });
 
             if ($jobs->isEmpty()) {
-                return [];
+                return ok('No Data For Now !', []);
             }
-            return $jobs;
+            return ok('Jobs Listed By the Company Found!!', $jobs);
         } catch (\Exception $e) {
             return error('Error getting jobs: ' . $e->getMessage());
         }
@@ -96,7 +94,12 @@ class JobController extends Controller
                 'pay' => 'required|string',
             ]);
             $company_id = Company::where('name', $request['company_name'])->first()->id;
-            $job = Job::create($request->only(['title', 'description', 'location', 'pay']) + ['created_by' => auth()->user()->id] + ['company_id' => $company_id]);
+            $job = Job::create(
+                $request->only(['title', 'description', 'location', 'pay']) + [
+                    'created_by' => auth()->user()->id,
+                    'company_id' => $company_id,
+                ],
+            );
             return ok('Job Created Successfully', $job, 200);
         } catch (\Exception $e) {
             return error('Error Creating Job : ' . $e->getMessage());

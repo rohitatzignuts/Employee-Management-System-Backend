@@ -31,13 +31,7 @@ class UserAuthController extends Controller
             ]);
             return ok('User Registred Successfully');
         } catch (\Exception $e) {
-            return response()->json(
-                [
-                    'message' => 'Failed to create user',
-                    'error' => $e->getMessage(),
-                ],
-                500,
-            );
+            return error('Failed to register the user' . $e->getMessage());
         }
     }
 
