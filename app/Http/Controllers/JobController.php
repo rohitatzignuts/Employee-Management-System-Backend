@@ -30,6 +30,7 @@ class JobController extends Controller
 
             $jobs->transform(function ($job) {
                 $job->company_name = $job->company->name;
+                $job->company_logo = $job->company->logo;
                 unset($job->company);
                 return $job;
             });

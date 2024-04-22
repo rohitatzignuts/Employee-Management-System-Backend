@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Company;
+use App\Models\Job;
 use App\Models\User;
 use App\Models\Preferences;
 use Illuminate\Validation\Rule;
@@ -202,10 +203,11 @@ class CompanyController extends Controller
     public function registeredCompanies()
     {
         try {
-            $companies = Company::all()->pluck('name');
+            $companies = Job::with('company')->get()->pluck('company.name');
             return ok('Companies Found !!', $companies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
         }
     }
+
 }

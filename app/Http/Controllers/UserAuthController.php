@@ -21,7 +21,7 @@ class UserAuthController extends Controller
                 'first_name' => 'required|string',
                 'last_name' => 'required|string',
                 'email' => 'required|string|email|unique:users',
-                'password' => 'required|min:8',
+                'password' => 'required|min:8|confirmed',
             ]);
             $user = User::create([
                 'first_name' => $registerUserData['first_name'],
@@ -29,9 +29,9 @@ class UserAuthController extends Controller
                 'email' => $registerUserData['email'],
                 'password' => bcrypt($registerUserData['password']),
             ]);
-            return ok('User Registred Successfully');
+            return ok('User Registred Successfully',$user);
         } catch (\Exception $e) {
-            return error('Failed to register the user' . $e->getMessage());
+            return error('Failed to register the user : ' . $e->getMessage());
         }
     }
 
