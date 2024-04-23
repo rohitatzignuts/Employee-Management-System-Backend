@@ -6,6 +6,7 @@ use App\Http\Controllers\UserAuthController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\CompanyEmployeeController;
+use App\Http\Controllers\JobStatusController;
 
 /*
 |--------------------------------------------------------------------------
@@ -22,7 +23,8 @@ use App\Http\Controllers\CompanyEmployeeController;
 Route::post('/register', [UserAuthController::class, 'register']);
 Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/jobs', [JobController::class, 'index']);
-Route::get('/registeredCompanies',[CompanyController::class,'registeredCompanies']);
+Route::get('/job/{id}', [JobController::class, 'show']);
+Route::get('/registeredCompanies', [CompanyController::class, 'registeredCompanies']);
 
 // Protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
@@ -50,10 +52,16 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
 
     // jobs routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
-        Route::get('/job/{id}', [JobController::class, 'show']);
         Route::get('{id}/jobs/search', [JobController::class, 'companyJobs']);
         Route::post('/job/create', [JobController::class, 'store']);
         Route::post('/job/update/{id}', [JobController::class, 'update']);
         Route::delete('/job/{id}', [JobController::class, 'destroy']);
     });
+
+    // job status routes
+    Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
+        Route::get('/applications', [JobStatusController::class, 'index']);
+        Route::get('/application/edit-{id}', [JobStatusController::class, 'edit']);
+    });
+    Route::post('/job-{id}/apply', [JobStatusController::class, 'apply']);
 });
