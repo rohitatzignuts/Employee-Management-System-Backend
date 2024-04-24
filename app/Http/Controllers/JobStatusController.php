@@ -22,10 +22,10 @@ class JobStatusController extends Controller
             $applications = JobStatus::all();
             $applications->transform(function ($applicant) {
                 $company = Company::find($applicant->company_id);
-                if ($company) {
-                    $applicant->company_name = $company->name;
-                } else {
-                    $applicant->company_name = null;
+                $job = Job::find($applicant->job_id);
+                if ($company || $job) {
+                    $applicant->company_name = $company->name ?? null;
+                    $applicant->job_title = $job->title ?? null;
                 }
                 return $applicant;
             });
@@ -78,10 +78,15 @@ class JobStatusController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(JobStatus $jobStatus)
+    public function show($id)
     {
         try {
-            //code...
+            $application = JobStatus::findOrFail($id);
+            $company = Company::find($application->company_id);
+            $job = Job::find($application->job_id);
+            $application->company_name = $company->name ?? null;
+            $application->job_title = $job->title ?? null;
+            return ok('Application Found!!', $application);
         } catch (\Exception $e) {
             return error('Request failed: ' . $e->getMessage());
         }
@@ -90,24 +95,65 @@ class JobStatusController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(JobStatus $jobStatus)
+    public function update($id, Request $request)
     {
-        //
+        try {
+            $application = JobStatus::findOrFail($id);
+            $application->update(['status' => $request->input('status')]);
+            return ok('Application Status Updated!!', $application);
+        } catch (\Exception $e) {
+            return error('Request failed: ' . $e->getMessage());
+        }
     }
 
     /**
-     * Update the specified resource in storage.
+     * Display a listing of the resource on the basis of user email
      */
-    public function update(Request $request, JobStatus $jobStatus)
+    public function applications(Request $request)
     {
-        //
+        try {
+            $user = User::where('email', $request->input('userEmail'))->firstOrFail();
+            $applications = JobStatus::where('user_id', $user->id)->get();
+            $applications->transform(function ($applicant) {
+                $company = Company::find($applicant->company_id);
+                $job = Job::find($applicant->job_id);
+                if ($company || $job) {
+                    $applicant->company_name = $company->name ?? null;
+                    $applicant->company_logo = $company->logo ?? null;
+                    $applicant->job_title = $job->title ?? null;
+                    $applicant->job_location = $job->location ?? null;
+                    $applicant->job_pay = $job->pay ?? null;
+                }
+                return $applicant;
+            });
+            return ok('Applicantions Found!', $applications);
+        } catch (\Exception $e) {
+            return error('Request failed: ' . $e->getMessage());
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(JobStatus $jobStatus)
+    public function destroy($id, Request $request)
     {
-        //
+        try {
+            $application = JobStatus::findOrFail($id);
+
+            // Check if delete type is provided in the request
+            $deleteType = $request->input('deleteType');
+
+            // Delete the company and associated users based on the delete type
+            if ($deleteType === 'permanent') {
+                // Permanently delete the company and associated users
+                $application->forceDelete(); // Use forceDelete for permanent deletion
+            } else {
+                // Soft delete the company and associated users
+                $application->delete();
+            }
+            return ok('application deleted successfully', 200);
+        } catch (\Exception $e) {
+            return error('Error deleting application: ' . $e->getMessage());
+        }
     }
 }

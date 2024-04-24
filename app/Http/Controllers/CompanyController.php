@@ -114,7 +114,7 @@ class CompanyController extends Controller
 
             //send mail to the company admin with email and password
             Mail::to($request['email'])->send(new LoginMail($mailData));
-            return ok('Company Created Successfully', $company);
+            return ok('Company Created Successfully!!', $company);
         } catch (\Exception $e) {
             return error('Error creating company: ' . $e->getMessage());
         }
@@ -159,7 +159,7 @@ class CompanyController extends Controller
 
             // Update or create the user (admin) data
             $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
-            return ok('Company Updated Successfully', $company);
+            return ok('Company Updated Successfully!!', $company);
         } catch (\Exception $e) {
             return error('Error Finding company: ' . $e->getMessage());
         }
@@ -190,10 +190,9 @@ class CompanyController extends Controller
                     $user->delete();
                 }
             }
-
             return ok('Company and associated users deleted successfully', 200);
-        } catch (ModelNotFoundException $e) {
-            return error('Error deleting company and associated users: ' . $e->getMessage());
+        } catch (\Exception $e) {
+            return error('failed to delete the company' . $e->getMessage());
         }
     }
 

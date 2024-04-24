@@ -17,12 +17,12 @@ class JobFactory extends Factory
     public function definition(): array
     {
         return [
-            'title' => fake()->name(),
-            'description' => fake()->text(),
-            'location' => fake()->address(),
+            'title' => fake()->jobTitle(),
+            'description' => fake()->realText($maxNbChars = 200, $indexSize = 2),
+            'location' => fake()->state(),
             'pay' => rand(100000,500000),
-            'company_id' => 1,
-            'is_active' => rand(0,1),
+            'company_id' => 3,
+            'is_active' => 1,
             'is_trending' => rand(0,1),
         ];
     }
