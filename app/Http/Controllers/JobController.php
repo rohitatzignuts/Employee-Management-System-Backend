@@ -115,6 +115,7 @@ class JobController extends Controller
         try {
             $job = Job::findOrFail($id);
             $job->company_name = $job->company->name;
+            $job->company_logo = $job->company->logo ?? null;
             $job->makeHidden('company');
             return ok('Job Found !', $job);
         } catch (Exception $e) {

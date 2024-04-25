@@ -16,7 +16,7 @@ class JobStatusController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         try {
             $applications = JobStatus::all();
@@ -29,7 +29,35 @@ class JobStatusController extends Controller
                 }
                 return $applicant;
             });
+            if ($applications->isEmpty()) {
+                return ok('No Applicants For Now !', []);
+            }
             return ok('Applicants Found!', $applications);
+        } catch (\Exception $e) {
+            return error('Request failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Display a listing of the resource.
+     */
+    public function companyApplicants($id)
+    {
+        try {
+            $applications = JobStatus::where('company_id', $id)->get();
+            $applications->transform(function ($applicant) {
+                $company = Company::find($applicant->company_id);
+                $job = Job::find($applicant->job_id);
+                if ($company || $job) {
+                    $applicant->company_name = $company->name ?? null;
+                    $applicant->job_title = $job->title ?? null;
+                }
+                return $applicant;
+            });
+            if ($applications->isEmpty()) {
+                return ok('No Applicants For Now !', []);
+            }
+            return ok('Applicants Found!!', $applications);
         } catch (\Exception $e) {
             return error('Request failed: ' . $e->getMessage());
         }

@@ -61,6 +61,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     // job status routes
     Route::middleware(['checkRole:admin,cmp_admin'])->group(function () {
         Route::get('/applications', [JobStatusController::class, 'index']);
+        Route::get('/{id}/applications', [JobStatusController::class, 'companyApplicants']);
         Route::post('/application/edit-{id}', [JobStatusController::class, 'update']);
         Route::delete('/application/{id}', [JobStatusController::class, 'destroy']);
         Route::get('/application/{id}', [JobStatusController::class, 'show']);
