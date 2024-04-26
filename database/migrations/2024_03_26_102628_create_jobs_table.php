@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('pay');
             $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
             $table->tinyInteger('is_active')->default(1);
-            $table->tinyInteger('is_trending')->default(0);
+            $table->tinyInteger('is_trending')->default(1);
             $table->timestamps();
         });
     }

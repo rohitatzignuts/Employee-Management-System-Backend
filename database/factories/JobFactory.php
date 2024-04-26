@@ -21,7 +21,7 @@ class JobFactory extends Factory
             'description' => fake()->realText($maxNbChars = 200, $indexSize = 2),
             'location' => fake()->state(),
             'pay' => rand(100000,500000),
-            'company_id' => 3,
+            'company_id' => rand(3,5),
             'is_active' => 1,
             'is_trending' => rand(0,1),
         ];

@@ -26,6 +26,12 @@ class JobController extends Controller
                 $query->where('title', 'like', '%' . $request->input('term') . '%');
             }
 
+            if ($request->has('trending')) {
+                $isTrending = $request->input('trending') === 'trending' ? 1 : 0;
+                $query->where('is_trending', $isTrending)->where('is_active', 1)->limit(5);
+            }
+
+            // Transform the jobs
             $jobs = $query->get();
 
             $jobs->transform(function ($job) {

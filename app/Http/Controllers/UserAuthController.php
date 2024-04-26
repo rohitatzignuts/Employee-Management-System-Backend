@@ -48,7 +48,7 @@ class UserAuthController extends Controller
             // Check Credentials
             $user = User::where('email', $loginUserData['email'])->first();
             if (!$user || !Hash::check($loginUserData['password'], $user->password)) {
-                return error('User Not Found !!');
+                return error('Invalid Login Details !!');
             }
             // Create Token
             $token = $user->createToken('LoginToken')->plainTextToken;

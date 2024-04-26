@@ -203,7 +203,8 @@ class CompanyController extends Controller
     {
         try {
             $companies = Job::with('company')->get()->pluck('company.name');
-            return ok('Companies Found !!', $companies);
+            $uniqueCompanies = collect($companies)->unique()->values()->all();
+            return ok('Companies Found !!', $uniqueCompanies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
         }
