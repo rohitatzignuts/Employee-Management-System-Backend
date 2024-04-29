@@ -25,6 +25,13 @@ class CompanyEmployeeController extends Controller
 
     /**
      * Display a listing of the resource on the basis of search term and filter status if not given return all
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /employees
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
@@ -62,10 +69,18 @@ class CompanyEmployeeController extends Controller
 
     /**
      * Display a listing of the resource by companyId
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /{id}/employees
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function companyEmployees(string $id, Request $request)
     {
         try {
+            // find the company with the requested id
             $company = Company::findOrFail($id);
 
             // filter list on term
@@ -88,6 +103,13 @@ class CompanyEmployeeController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /employee/create
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
@@ -101,6 +123,7 @@ class CompanyEmployeeController extends Controller
             ]);
 
             $company = Company::where('name', $request['company_name'])->first();
+            // generate a new empNumber for the newly created user
             $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
             $employee = User::create(
                 $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
@@ -110,7 +133,7 @@ class CompanyEmployeeController extends Controller
                     'emp_number' => $employeeNumber,
                 ],
             );
-
+            // return newly created employee in the api response
             return ok('Employee Registered Successfully', $employee, 200);
         } catch (\Exception $e) {
             return error('Error Registering Employee: ' . $e->getMessage());
@@ -119,6 +142,13 @@ class CompanyEmployeeController extends Controller
 
     /**
      * Display the specified resource.
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /employee/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param  string $id
+     * @return \Illuminate\Http\Response
      */
     public function show(string $id)
     {
@@ -126,6 +156,7 @@ class CompanyEmployeeController extends Controller
             $employee = User::findOrFail($id);
             $employee->company_name = $employee->company->name;
             $employee->makeHidden('company');
+            // return found employee in the api response
             return ok('Employee Found !', $employee, 200);
         } catch (ModelNotFoundException $e) {
             return error('Error Finding employee: ' . $e->getMessage());
@@ -134,6 +165,13 @@ class CompanyEmployeeController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /employee/update/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, string $id)
     {
@@ -146,6 +184,7 @@ class CompanyEmployeeController extends Controller
                 'joining_date' => 'required|date',
             ]);
             $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
+            // return updated employee in the api response
             return ok('Employee Updated Successfully', $employee, 200);
         } catch (\Exception $e) {
             return error('Error Updating Employee: ' . $e->getMessage());
@@ -154,6 +193,13 @@ class CompanyEmployeeController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * @method DELETE
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /employee/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function destroy(string $id, Request $request)
     {

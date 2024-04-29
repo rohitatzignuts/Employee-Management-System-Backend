@@ -15,6 +15,13 @@ class JobController extends Controller
 {
     /**
      * Display a listing of the resource on the basis of search term and filter status if not given return all
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /jobs
+     * @authentication does not Requires user authentication
+     * @middleware auth:sanctum
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
@@ -26,14 +33,15 @@ class JobController extends Controller
                 $query->where('title', 'like', '%' . $request->input('term') . '%');
             }
 
+            // filter list on trending
             if ($request->has('trending')) {
                 $isTrending = $request->input('trending') === 'trending' ? 1 : 0;
                 $query->where('is_trending', $isTrending)->where('is_active', 1)->limit(5);
             }
 
-            // Transform the jobs
             $jobs = $query->get();
 
+            // Transform the jobs
             $jobs->transform(function ($job) {
                 $job->company_name = $job->company->name;
                 $job->company_logo = $job->company->logo;
@@ -52,6 +60,7 @@ class JobController extends Controller
             }
             //convert the collection to a plain array:
             $jobs = $jobs->values();
+            // return filtered/all jobs in the api response
             return ok('Jobs Found!', $jobs);
         } catch (\Exception $e) {
             return error('Error getting jobs: ' . $e->getMessage());
@@ -60,6 +69,13 @@ class JobController extends Controller
 
     /**
      * Display a listing of the resource by company.
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /{id}/jobs/search
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function companyJobs(string $id, Request $request)
     {
@@ -90,6 +106,13 @@ class JobController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /job/created
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
@@ -115,12 +138,19 @@ class JobController extends Controller
 
     /**
      * Display the specified resource.
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /job/{id}
+     * @authentication does not Requires user authentication
+     * @param string $id
+     * @return \Illuminate\Http\Response
      */
     public function show(string $id)
     {
         try {
             $job = Job::findOrFail($id);
-            $job->company_name = $job->company->name;
+            // add only company_name and company_logo in the $job object
+            $job->company_name = $job->company->name ?? null;
             $job->company_logo = $job->company->logo ?? null;
             $job->makeHidden('company');
             return ok('Job Found !', $job);
@@ -131,6 +161,13 @@ class JobController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /job/update/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, string $id)
     {
@@ -151,6 +188,13 @@ class JobController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * @method DELETE
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /job/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function destroy(Request $request, string $id)
     {

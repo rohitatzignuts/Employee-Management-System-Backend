@@ -14,12 +14,21 @@ require_once app_path('Http/Helpers/APIResponse.php');
 class JobStatusController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     *  Display a listing of the applications.
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /applications
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
         try {
             $applications = JobStatus::all();
+
+            // transform the application object  by adding company_name and job_title
             $applications->transform(function ($applicant) {
                 $company = Company::find($applicant->company_id);
                 $job = Job::find($applicant->job_id);
@@ -29,6 +38,7 @@ class JobStatusController extends Controller
                 }
                 return $applicant;
             });
+
             if ($applications->isEmpty()) {
                 return ok('No Applicants For Now !', []);
             }
@@ -39,12 +49,21 @@ class JobStatusController extends Controller
     }
 
     /**
-     * Display a listing of the resource.
+     *  Display the listing of the applicant with id.
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /{id}/applications
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function companyApplicants($id)
     {
         try {
             $applications = JobStatus::where('company_id', $id)->get();
+
+            // transform application object by adding company_name and job_title
             $applications->transform(function ($applicant) {
                 $company = Company::find($applicant->company_id);
                 $job = Job::find($applicant->job_id);
@@ -54,6 +73,7 @@ class JobStatusController extends Controller
                 }
                 return $applicant;
             });
+
             if ($applications->isEmpty()) {
                 return ok('No Applicants For Now !', []);
             }
@@ -64,7 +84,13 @@ class JobStatusController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
+     *  apply for the job by providing resume and userEmail.
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /job-{id}/apply
+     * @authentication Requires user authentication
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function apply(Request $request)
     {
@@ -87,6 +113,7 @@ class JobStatusController extends Controller
                 return error('You have already applied for this job.');
             }
 
+            // store the user resume publicaly
             $resumePath = $request->file('resume')->store('public/resumes');
             $resumePath = str_replace('public/', '', $resumePath);
 
@@ -104,7 +131,14 @@ class JobStatusController extends Controller
     }
 
     /**
-     * Display the specified resource.
+     *  Display the listing of the application with id.
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route //application/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param string $id
+     * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
@@ -121,7 +155,14 @@ class JobStatusController extends Controller
     }
 
     /**
-     * Show the form for editing the specified resource.
+     *  update the job application
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /application/edit-{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function update($id, Request $request)
     {
@@ -135,13 +176,21 @@ class JobStatusController extends Controller
     }
 
     /**
-     * Display a listing of the resource on the basis of user email
+     *  Display a listing of the jobs user has applied for
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /applications/status
+     * @authentication Requires user authentication
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function applications(Request $request)
     {
         try {
             $user = User::where('email', $request->input('userEmail'))->firstOrFail();
             $applications = JobStatus::where('user_id', $user->id)->get();
+
+            // transform the application object to add extra feilds in the response
             $applications->transform(function ($applicant) {
                 $company = Company::find($applicant->company_id);
                 $job = Job::find($applicant->job_id);
@@ -154,6 +203,7 @@ class JobStatusController extends Controller
                 }
                 return $applicant;
             });
+
             return ok('Applicantions Found!', $applications);
         } catch (\Exception $e) {
             return error('Request failed: ' . $e->getMessage());
@@ -161,7 +211,14 @@ class JobStatusController extends Controller
     }
 
     /**
-     * Remove the specified resource from storage.
+     *  Delete the user application
+     * @method DELETE
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /application/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin,cmp_admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function destroy($id, Request $request)
     {

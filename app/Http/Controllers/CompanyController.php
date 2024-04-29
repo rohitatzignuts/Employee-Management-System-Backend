@@ -30,7 +30,15 @@ class CompanyController extends Controller
     }
 
     /**
-     * Display a listing of the resource on the basis of search term and filter status if not given return all
+     * Display a listing of the companies for super admin.
+     *
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /companies
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
@@ -39,7 +47,8 @@ class CompanyController extends Controller
 
             // filter list on term
             if ($request->has('term')) {
-                $query->where('name', 'like', '%' . $request->input('term') . '%');
+                $term = $request->input('term');
+                $query->where('name', 'like', '%' . $term . '%');
             }
 
             // filter list on status
@@ -48,6 +57,7 @@ class CompanyController extends Controller
                 $query->where('is_active', $statusValue);
             }
 
+            // skip the first record
             $companies = $query
                 ->skip(1)
                 ->take(PHP_INT_MAX)
@@ -56,7 +66,7 @@ class CompanyController extends Controller
             if ($companies->isEmpty()) {
                 return ok('No Data for Now: ', []);
             }
-
+            // return companies in the api response
             return ok('Companies fetched Successfully: ', $companies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
@@ -65,6 +75,14 @@ class CompanyController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     *
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /company/create
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
@@ -109,11 +127,12 @@ class CompanyController extends Controller
                 'company_name' => $request['name'],
                 'email' => $request['email'],
                 'password' => 'password',
-                'loginLink' => env('LOGIN_URL')
+                'loginLink' => env('LOGIN_URL'),
             ];
 
             //send mail to the company admin with email and password
             Mail::to($request['email'])->send(new LoginMail($mailData));
+            // return created company in the api response
             return ok('Company Created Successfully!!', $company);
         } catch (\Exception $e) {
             return error('Error creating company: ' . $e->getMessage());
@@ -122,6 +141,14 @@ class CompanyController extends Controller
 
     /**
      * Display the specified resource.
+     *
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /company/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin
+     * @param string $id
+     * @return \Illuminate\Http\Response
      */
     public function show(string $id)
     {
@@ -135,6 +162,13 @@ class CompanyController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /company/update/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin
+     * @param \Illuminate\Http\Request $request ,string $id
+     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, string $id)
     {
@@ -159,6 +193,7 @@ class CompanyController extends Controller
 
             // Update or create the user (admin) data
             $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
+            // return updated company in the api response
             return ok('Company Updated Successfully!!', $company);
         } catch (\Exception $e) {
             return error('Error Finding company: ' . $e->getMessage());
@@ -167,6 +202,13 @@ class CompanyController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     * @method DELETE
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /company/{id}
+     * @authentication Requires user authentication
+     * @middleware checkRole:admin
+     * @param \Illuminate\Http\Request $request, string $id
+     * @return \Illuminate\Http\Response
      */
     public function destroy(string $id, Request $request)
     {
@@ -197,17 +239,23 @@ class CompanyController extends Controller
     }
 
     /**
-     *return all the registered companies
+     * return all the registered companies
+     * @method GET
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /registeredCompanies
+     * @authentication does not Requires user authentication
+     * @return \Illuminate\Http\Response
      */
     public function registeredCompanies()
     {
         try {
+            // get company names array for the filtering process
             $companies = Job::with('company')->get()->pluck('company.name');
             $uniqueCompanies = collect($companies)->unique()->values()->all();
+            // return company names (unique) in the api response
             return ok('Companies Found !!', $uniqueCompanies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
         }
     }
-
 }

@@ -12,7 +12,13 @@ require_once app_path('Http/Helpers/APIResponse.php');
 class UserAuthController extends Controller
 {
     /**
-     * Register a new user
+     *  Register a new User
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @authentication Does not Require user authentication
+     * @route /register
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function register(Request $request)
     {
@@ -29,14 +35,20 @@ class UserAuthController extends Controller
                 'email' => $registerUserData['email'],
                 'password' => bcrypt($registerUserData['password']),
             ]);
-            return ok('User Registred Successfully',$user);
+            return ok('User Registred Successfully', $user);
         } catch (\Exception $e) {
             return error('Failed to register the user : ' . $e->getMessage());
         }
     }
 
     /**
-     *  Logs in a user
+     *  Log in the registered user
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @authentication Does not Require user authentication
+     * @route /login
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function login(Request $request)
     {
@@ -65,7 +77,14 @@ class UserAuthController extends Controller
     }
 
     /**
-     *  Logs in a user
+     * Reset already existing users password
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /resetPassword
+     * @authentication Requires user authentication
+     * @middleware auth:sanctum
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function resetPassword(Request $request)
     {
@@ -76,6 +95,7 @@ class UserAuthController extends Controller
                 'newPassword' => 'required|min:8',
             ]);
             $user = User::where('email', $loginUserData['email'])->first();
+            // check for the old password
             if (!$user || !Hash::check($loginUserData['oldPassword'], $user->password)) {
                 return error('Invalid Credentials');
             }
@@ -89,11 +109,19 @@ class UserAuthController extends Controller
     }
 
     /**
-     * Logs out the user
+     * Logout existing user
+     * @method POST
+     * @author Rohit Vispute (Zignuts Technolab)
+     * @route /logout
+     * @authentication Requires user authentication
+     * @middleware auth:sanctum
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\Response
      */
     public function logout()
     {
         try {
+            // delete user's authentication token
             auth()->user()->tokens()->delete();
             return ok('Logged out SuccessFully!');
         } catch (\Exception $e) {
