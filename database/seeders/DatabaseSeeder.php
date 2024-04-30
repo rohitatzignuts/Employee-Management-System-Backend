@@ -21,7 +21,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CompaniesSeeder::class,
             UserSeeder::class,
-            // JobSeeder::class, // create a 2nd company and then run the seeder class
+            JobSeeder::class,
         ]);
     }
 }
