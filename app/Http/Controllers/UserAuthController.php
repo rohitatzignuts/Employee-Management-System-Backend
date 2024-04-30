@@ -34,6 +34,7 @@ class UserAuthController extends Controller
                 'last_name' => $registerUserData['last_name'],
                 'email' => $registerUserData['email'],
                 'password' => bcrypt($registerUserData['password']),
+                'created_by' => auth()->user()->id,
             ]);
             return ok('User Registred Successfully', $user);
         } catch (\Exception $e) {
@@ -57,8 +58,12 @@ class UserAuthController extends Controller
                 'email' => 'required|string|email',
                 'password' => 'required|min:8',
             ]);
-            // Check Credentials
             $user = User::where('email', $loginUserData['email'])->first();
+            // check if user exists or not
+            if (!$user) {
+                return error('User Not Found!!');
+            }
+            // Check Credentials
             if (!$user || !Hash::check($loginUserData['password'], $user->password)) {
                 return error('Invalid Login Details !!');
             }
@@ -101,6 +106,7 @@ class UserAuthController extends Controller
             }
             $user->update([
                 'password' => bcrypt($loginUserData['newPassword']),
+                'updated_by' => auth()->user()->id,
             ]);
             return ok('Password reset successfully');
         } catch (\Exception $e) {

@@ -179,7 +179,10 @@ class JobController extends Controller
                 'location' => 'required|string',
                 'pay' => 'required|string',
             ]);
-            $job->update($request->all());
+
+            // update all the data from the request body
+            $job->update(array_merge($request->all(), ['updated_by' => auth()->user()->id]));
+
             return ok('Job Updated Successfully', $job, 200);
         } catch (\Exception $e) {
             return error('Error Updating Job : ' . $e->getMessage());

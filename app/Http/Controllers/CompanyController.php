@@ -57,11 +57,8 @@ class CompanyController extends Controller
                 $query->where('is_active', $statusValue);
             }
 
-            // skip the first record
-            $companies = $query
-                ->skip(1)
-                ->take(PHP_INT_MAX)
-                ->get();
+            // get all the companies
+            $companies = $query->get();
 
             if ($companies->isEmpty()) {
                 return ok('No Data for Now: ', []);
@@ -192,7 +189,9 @@ class CompanyController extends Controller
             $company->update($request->only(['name', 'website', 'cmp_email', 'location', 'is_active']));
 
             // Update or create the user (admin) data
-            $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
+            $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
+                'updated_by' => auth()->user()->id,
+            ]);
             // return updated company in the api response
             return ok('Company Updated Successfully!!', $company);
         } catch (\Exception $e) {

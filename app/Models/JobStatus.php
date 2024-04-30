@@ -9,6 +9,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class JobStatus extends Model
 {
     use HasFactory,SoftDeletes;
-    protected $fillable = ['user_id', 'status', 'resume', 'company_id','job_id'];
+    protected $fillable = ['user_id', 'status', 'resume', 'company_id','job_id','updated_by','created_by'];
     protected $table = 'job_status';
 }

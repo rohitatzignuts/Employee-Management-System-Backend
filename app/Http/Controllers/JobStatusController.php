@@ -101,7 +101,9 @@ class JobStatusController extends Controller
                 'resume' => 'required|file|mimes:jpeg,png,jpg,pdf|max:2048',
             ]);
 
+            // get the user details from the id
             $user = User::where('email', $request['user_email'])->firstOrFail();
+            // get the job details from the id
             $job = Job::findOrFail($request['job_id']);
 
             // Check if the user has already applied for this job
@@ -122,6 +124,7 @@ class JobStatusController extends Controller
                     'user_id' => $user->id,
                     'company_id' => $job->company_id,
                     'resume' => $resumePath,
+                    'created_by' => auth()->user()->id,
                 ],
             );
             return ok('Application successful!!', $jobApplication);
@@ -168,7 +171,10 @@ class JobStatusController extends Controller
     {
         try {
             $application = JobStatus::findOrFail($id);
-            $application->update(['status' => $request->input('status')]);
+            $application->update([
+                'status' => $request->input('status'),
+                'updated_by' => auth()->user()->id,
+            ]);
             return ok('Application Status Updated!!', $application);
         } catch (\Exception $e) {
             return error('Request failed: ' . $e->getMessage());

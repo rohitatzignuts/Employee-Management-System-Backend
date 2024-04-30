@@ -131,6 +131,7 @@ class CompanyEmployeeController extends Controller
                     'password' => 'password',
                     'company_id' => $company->id,
                     'emp_number' => $employeeNumber,
+                    'created_by' => auth()->user()->id,
                 ],
             );
             // return newly created employee in the api response
@@ -183,7 +184,9 @@ class CompanyEmployeeController extends Controller
                 'email' => ['required', 'string', 'email', Rule::unique('users')->ignore($id)],
                 'joining_date' => 'required|date',
             ]);
-            $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
+            $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
+                'updated_by' => auth()->user()->id,
+            ]);
             // return updated employee in the api response
             return ok('Employee Updated Successfully', $employee, 200);
         } catch (\Exception $e) {
