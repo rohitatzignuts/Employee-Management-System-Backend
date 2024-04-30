@@ -34,7 +34,6 @@ class UserAuthController extends Controller
                 'last_name' => $registerUserData['last_name'],
                 'email' => $registerUserData['email'],
                 'password' => bcrypt($registerUserData['password']),
-                'created_by' => auth()->user()->id,
             ]);
             return ok('User Registred Successfully', $user);
         } catch (\Exception $e) {
