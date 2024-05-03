@@ -5,24 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Company;
 use App\Models\Preferences;
-use App\Services\EmployeeService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+// use App\Http\Helpers\EmployeeNumber;
+
 require_once app_path('Http/Helpers/APIResponse.php');
+// require_once app_path('Http/Helpers/EmployeeNumber.php');
 
 class CompanyEmployeeController extends Controller
 {
-    protected $employeeService;
-
-    /**
-     * Register EmployeeService
-     */
-    public function __construct(EmployeeService $employeeService)
-    {
-        $this->employeeService = $employeeService;
-    }
-
     /**
      * Display a listing of the resource on the basis of search term and filter status if not given return all
      * @method GET
@@ -36,32 +28,21 @@ class CompanyEmployeeController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = User::with('company')->whereIn('role', ['cmp_admin', 'employee']);
+            $request->validate([
+                'company' => 'string|required',
+                'status' => 'string|nullable',
+            ]);
 
-            // filter list on term
-            if ($request->has('term')) {
-                $query->where('first_name', 'like', '%' . $request->input('term') . '%');
-            }
-
-            // filter list on status
-            if ($request->has('status')) {
-                $query->where('role', $request->input('status'));
-            }
-
-            $employees = $query->get();
-
-            // add company_name to the employee object and remove extra company details
-            $employees->transform(function ($employee) {
-                $employee->company_name = $employee->company->name;
-                unset($employee->company);
-                return $employee;
-            });
+            $company = Company::where('name', $request->input('company'))->firstOrFail();
+            $employees = User::where('company_id',$company->id)->get();
 
             if ($employees->isEmpty()) {
-                return ok('No Data For Now !', []);
+                return ok('No employees found for this company', []);
             }
 
-            return ok('Employees Found!!', $employees);
+            return ok('Employees of ' . $company->name . ' found successfully', $employees);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return ok('Company not found', []);
         } catch (\Exception $e) {
             return error('Error getting employees: ' . $e->getMessage());
         }
@@ -80,22 +61,27 @@ class CompanyEmployeeController extends Controller
     public function companyEmployees(string $id, Request $request)
     {
         try {
+            $request->validate([
+                'term' => 'string|nullable|min:3',
+            ]);
+
             // find the company with the requested id
             $company = Company::findOrFail($id);
+            $employees = User::where('company_id', $company->id);
 
             // filter list on term
             if ($request->has('term')) {
-                $employees = User::where('company_id', $company->id)
-                    ->where('first_name', 'like', '%' . $request->input('term') . '%')
-                    ->get();
-            } else {
-                $employees = User::where('company_id', $company->id)->get();
+                $term = $request->input('term');
+                $employees->where('first_name', 'like', "%$term%");
             }
 
+            $employees = $employees->with('company')->get();
+
             if ($employees->isEmpty()) {
-                return ok('No Data For Now !', []);
+                return ok([]);
             }
-            return ok('Employee Registered Successfully', $employees, 200);
+
+            return ok('Employees of your company found Successfully', $employees);
         } catch (\Exception $e) {
             return error('Error getting employees: ' . $e->getMessage());
         }
@@ -123,19 +109,18 @@ class CompanyEmployeeController extends Controller
             ]);
 
             $company = Company::where('name', $request['company_name'])->first();
-            // generate a new empNumber for the newly created user
-            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
+
             $employee = User::create(
                 $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
                     'role' => 'employee',
                     'password' => 'password',
                     'company_id' => $company->id,
-                    'emp_number' => $employeeNumber,
+                    'emp_number' => generateUniqueEmployeeNumber(),
                     'created_by' => auth()->user()->id,
                 ],
             );
             // return newly created employee in the api response
-            return ok('Employee Registered Successfully', $employee, 200);
+            return ok('Employee Registered Successfully', $employee);
         } catch (\Exception $e) {
             return error('Error Registering Employee: ' . $e->getMessage());
         }
@@ -154,11 +139,9 @@ class CompanyEmployeeController extends Controller
     public function show(string $id)
     {
         try {
-            $employee = User::findOrFail($id);
-            $employee->company_name = $employee->company->name;
-            $employee->makeHidden('company');
+            $employee = User::with('company')->findOrFail($id);
             // return found employee in the api response
-            return ok('Employee Found !', $employee, 200);
+            return ok('Employee Found !', $employee);
         } catch (ModelNotFoundException $e) {
             return error('Error Finding employee: ' . $e->getMessage());
         }
@@ -178,17 +161,15 @@ class CompanyEmployeeController extends Controller
     {
         try {
             $employee = User::findOrFail($id);
-            $cmpEmployee = $request->validate([
+            $request->validate([
                 'first_name' => 'required|string',
                 'last_name' => 'required|string',
                 'email' => ['required', 'string', 'email', Rule::unique('users')->ignore($id)],
                 'joining_date' => 'required|date',
             ]);
-            $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
-                'updated_by' => auth()->user()->id,
-            ]);
+            $employee->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
             // return updated employee in the api response
-            return ok('Employee Updated Successfully', $employee, 200);
+            return ok('Employee Updated Successfully', $employee);
         } catch (\Exception $e) {
             return error('Error Updating Employee: ' . $e->getMessage());
         }
@@ -220,7 +201,7 @@ class CompanyEmployeeController extends Controller
                 // Soft delete the Employee
                 $user->delete();
             }
-            return ok('Employee deleted successfully', 200);
+            return ok('Employee deleted successfully');
         } catch (ModelNotFoundException $e) {
             return error('Error deleting Employee: ' . $e->getMessage());
         }

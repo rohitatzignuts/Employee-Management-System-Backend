@@ -26,23 +26,8 @@ class JobStatusController extends Controller
     public function index(Request $request)
     {
         try {
-            $applications = JobStatus::all();
-
-            // transform the application object  by adding company_name and job_title
-            $applications->transform(function ($applicant) {
-                $company = Company::find($applicant->company_id);
-                $job = Job::find($applicant->job_id);
-                if ($company || $job) {
-                    $applicant->company_name = $company->name ?? null;
-                    $applicant->job_title = $job->title ?? null;
-                }
-                return $applicant;
-            });
-
-            if ($applications->isEmpty()) {
-                return ok('No Applicants For Now !', []);
-            }
-            return ok('Applicants Found!', $applications);
+            $applications = JobStatus::with(['job', 'company'])->get();
+            return $applications->isEmpty() ? ok([]) : ok('Applicants Found!', $applications);
         } catch (\Exception $e) {
             return error('Request failed: ' . $e->getMessage());
         }
@@ -61,19 +46,9 @@ class JobStatusController extends Controller
     public function companyApplicants($id)
     {
         try {
-            $applications = JobStatus::where('company_id', $id)->get();
-
-            // transform application object by adding company_name and job_title
-            $applications->transform(function ($applicant) {
-                $company = Company::find($applicant->company_id);
-                $job = Job::find($applicant->job_id);
-                if ($company || $job) {
-                    $applicant->company_name = $company->name ?? null;
-                    $applicant->job_title = $job->title ?? null;
-                }
-                return $applicant;
-            });
-
+            $applications = JobStatus::with(['company', 'job'])
+                ->where('company_id', $id)
+                ->get();
             if ($applications->isEmpty()) {
                 return ok('No Applicants For Now !', []);
             }
@@ -124,7 +99,6 @@ class JobStatusController extends Controller
                     'user_id' => $user->id,
                     'company_id' => $job->company_id,
                     'resume' => $resumePath,
-                    'created_by' => auth()->user()->id,
                 ],
             );
             return ok('Application successful!!', $jobApplication);
@@ -146,12 +120,10 @@ class JobStatusController extends Controller
     public function show($id)
     {
         try {
-            $application = JobStatus::findOrFail($id);
-            $company = Company::find($application->company_id);
-            $job = Job::find($application->job_id);
-            $application->company_name = $company->name ?? null;
-            $application->job_title = $job->title ?? null;
-            return ok('Application Found!!', $application);
+            $application = JobStatus::with(['job', 'company'])->findOrFail($id);
+            return ok('Application Found!', $application);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return error('Application not found.');
         } catch (\Exception $e) {
             return error('Request failed: ' . $e->getMessage());
         }
@@ -173,7 +145,6 @@ class JobStatusController extends Controller
             $application = JobStatus::findOrFail($id);
             $application->update([
                 'status' => $request->input('status'),
-                'updated_by' => auth()->user()->id,
             ]);
             return ok('Application Status Updated!!', $application);
         } catch (\Exception $e) {

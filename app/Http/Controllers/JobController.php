@@ -26,6 +26,12 @@ class JobController extends Controller
     public function index(Request $request)
     {
         try {
+            $request->validate([
+                'term' => 'nullable|min:3|string',
+                'trending' => 'nullable|string',
+                'company' => 'nullable|string',
+            ]);
+
             $query = Job::query();
 
             // filter list on term
@@ -39,15 +45,7 @@ class JobController extends Controller
                 $query->where('is_trending', $isTrending)->where('is_active', 1)->limit(5);
             }
 
-            $jobs = $query->get();
-
-            // Transform the jobs
-            $jobs->transform(function ($job) {
-                $job->company_name = $job->company->name;
-                $job->company_logo = $job->company->logo;
-                unset($job->company);
-                return $job;
-            });
+            $jobs = $query->with('company')->get();
 
             // filter list on company name
             if ($request->has('company')) {
@@ -56,7 +54,7 @@ class JobController extends Controller
             }
 
             if ($jobs->isEmpty()) {
-                return ok('No Data For Now !', []);
+                return ok([]);
             }
             //convert the collection to a plain array:
             $jobs = $jobs->values();
@@ -80,24 +78,23 @@ class JobController extends Controller
     public function companyJobs(string $id, Request $request)
     {
         try {
+            $request->validate([
+                'term' => 'nullable|min:3|string',
+            ]);
+
+            $jobsQuery = Job::where('company_id', $id)->with('company');
+
             if ($request->has('term')) {
-                $jobs = Job::where('company_id', $id)
-                    ->where('title', 'like', '%' . $request->input('term') . '%')
-                    ->get();
-            } else {
-                $jobs = Job::where('company_id', $id)->get();
+                $term = $request->input('term');
+                $jobsQuery->where('title', 'like', "%$term%");
             }
 
-            // add company_name to the returning job object and remove extra company data
-            $jobs->transform(function ($job) {
-                $job->company_name = $job->company->name;
-                unset($job->company);
-                return $job;
-            });
+            $jobs = $jobsQuery->get();
 
             if ($jobs->isEmpty()) {
-                return ok('No Data For Now !', []);
+                return ok([]);
             }
+
             return ok('Jobs Listed By the Company Found!!', $jobs);
         } catch (\Exception $e) {
             return error('Error getting jobs: ' . $e->getMessage());
@@ -126,11 +123,10 @@ class JobController extends Controller
             $company_id = Company::where('name', $request['company_name'])->first()->id;
             $job = Job::create(
                 $request->only(['title', 'description', 'location', 'pay']) + [
-                    'created_by' => auth()->user()->id,
                     'company_id' => $company_id,
                 ],
             );
-            return ok('Job Created Successfully', $job, 200);
+            return ok('Job Created Successfully', $job);
         } catch (\Exception $e) {
             return error('Error Creating Job : ' . $e->getMessage());
         }
@@ -148,11 +144,7 @@ class JobController extends Controller
     public function show(string $id)
     {
         try {
-            $job = Job::findOrFail($id);
-            // add only company_name and company_logo in the $job object
-            $job->company_name = $job->company->name ?? null;
-            $job->company_logo = $job->company->logo ?? null;
-            $job->makeHidden('company');
+            $job = Job::with('company')->findOrFail($id);
             return ok('Job Found !', $job);
         } catch (Exception $e) {
             return error('Job not Found ! : ' . $e->getMessage());
@@ -181,9 +173,9 @@ class JobController extends Controller
             ]);
 
             // update all the data from the request body
-            $job->update(array_merge($request->all(), ['updated_by' => auth()->user()->id]));
+            $job->update($request->all());
 
-            return ok('Job Updated Successfully', $job, 200);
+            return ok('Job Updated Successfully', $job);
         } catch (\Exception $e) {
             return error('Error Updating Job : ' . $e->getMessage());
         }
@@ -215,7 +207,7 @@ class JobController extends Controller
                 // Soft delete the company and associated users
                 $job->delete();
             }
-            return ok('Job deleted successfully', 200);
+            return ok('Job deleted successfully');
         } catch (ModelNotFoundException $e) {
             return error('Error deleting Job: ' . $e->getMessage());
         }

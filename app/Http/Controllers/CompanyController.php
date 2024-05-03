@@ -9,26 +9,16 @@ use App\Models\User;
 use App\Models\Preferences;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Response;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use App\Services\EmployeeService;
 use App\Mail\LoginMail;
 use Illuminate\Support\Facades\Mail;
+// use App\Http\Helpers\EmployeeNumber;
 
 require_once app_path('Http/Helpers/APIResponse.php');
+// require_once app_path('Http/Helpers/EmployeeNumber.php');
 
 class CompanyController extends Controller
 {
-    /**
-     * Register EmployeeService
-     */
-    protected $employeeService;
-
-    public function __construct(EmployeeService $employeeService)
-    {
-        $this->employeeService = $employeeService;
-    }
-
     /**
      * Display a listing of the companies for super admin.
      *
@@ -43,27 +33,29 @@ class CompanyController extends Controller
     public function index(Request $request)
     {
         try {
+            $request->validate([
+                'term' => 'string|min:3|nullable',
+                'status' => 'string|nullable',
+            ]);
+
             $query = Company::query();
 
-            // filter list on term
             if ($request->has('term')) {
                 $term = $request->input('term');
                 $query->where('name', 'like', '%' . $term . '%');
             }
 
-            // filter list on status
             if ($request->has('status')) {
                 $statusValue = $request->input('status') === 'active' ? 1 : 0;
                 $query->where('is_active', $statusValue);
             }
 
-            // get all the companies
             $companies = $query->get();
 
             if ($companies->isEmpty()) {
-                return ok('No Data for Now: ', []);
+                return ok([]);
             }
-            // return companies in the api response
+
             return ok('Companies fetched Successfully: ', $companies);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
@@ -93,6 +85,7 @@ class CompanyController extends Controller
                 'last_name' => 'required|string',
                 'email' => 'required|email|unique:users,email',
                 'joining_date' => 'required|date',
+                'logo' => 'nullable',
             ]);
 
             // Save the uploaded logo file
@@ -105,18 +98,15 @@ class CompanyController extends Controller
             $company = Company::create(
                 $request->only(['name', 'website', 'cmp_email', 'location']) + [
                     'logo' => $logoPath ?? null,
-                    'created_by' => auth()->user()->id,
                 ],
             );
 
-            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber();
             $user = User::create(
                 $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
                     'role' => 'cmp_admin',
                     'password' => bcrypt('password'),
                     'company_id' => $company->id,
-                    'emp_number' => $employeeNumber,
-                    'created_by' => auth()->user()->id,
+                    'emp_number' => generateUniqueEmployeeNumber(),
                 ],
             );
 
@@ -129,6 +119,7 @@ class CompanyController extends Controller
 
             //send mail to the company admin with email and password
             Mail::to($request['email'])->send(new LoginMail($mailData));
+
             // return created company in the api response
             return ok('Company Created Successfully!!', $company);
         } catch (\Exception $e) {
@@ -189,9 +180,8 @@ class CompanyController extends Controller
             $company->update($request->only(['name', 'website', 'cmp_email', 'location', 'is_active']));
 
             // Update or create the user (admin) data
-            $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
-                'updated_by' => auth()->user()->id,
-            ]);
+            $user->update($request->only(['first_name', 'last_name', 'email', 'joining_date']));
+
             // return updated company in the api response
             return ok('Company Updated Successfully!!', $company);
         } catch (\Exception $e) {

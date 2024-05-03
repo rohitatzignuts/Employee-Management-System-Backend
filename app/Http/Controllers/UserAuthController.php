@@ -23,21 +23,20 @@ class UserAuthController extends Controller
     public function register(Request $request)
     {
         try {
-            $registerUserData = $request->validate([
-                'first_name' => 'required|string',
-                'last_name' => 'required|string',
-                'email' => 'required|string|email|unique:users',
-                'password' => 'required|min:8|confirmed',
+            $request->validate([
+                'first_name'  => 'required|string',
+                'last_name'  => 'required|string',
+                'email'      => 'required|string|email|unique:users',
+                'password'   => 'required|min:8|confirmed',
             ]);
-            $user = User::create([
-                'first_name' => $registerUserData['first_name'],
-                'last_name' => $registerUserData['last_name'],
-                'email' => $registerUserData['email'],
-                'password' => bcrypt($registerUserData['password']),
-            ]);
+            $user = User::create(
+                $request->only('first_name', 'last_name', 'email') + [
+                    'password' => bcrypt($request->input('password')),
+                ],
+            );
             return ok('User Registred Successfully', $user);
         } catch (\Exception $e) {
-            return error('Failed to register the user : ' . $e->getMessage());
+            return error('Failed to registerd the user : ' . $e->getMessage());
         }
     }
 
@@ -54,22 +53,17 @@ class UserAuthController extends Controller
     {
         try {
             $loginUserData = $request->validate([
-                'email' => 'required|string|email',
+                'email'    => 'required|string|email',
                 'password' => 'required|min:8',
             ]);
-            $user = User::where('email', $loginUserData['email'])->first();
-            // check if user exists or not
-            if (!$user) {
-                return error('User Not Found!!');
-            }
+            $user = User::where('email', $loginUserData['email'])->firstOrFail();
             // Check Credentials
             if (!$user || !Hash::check($loginUserData['password'], $user->password)) {
                 return error('Invalid Login Details !!');
             }
             // Create Token
             $token = $user->createToken('LoginToken')->plainTextToken;
-            return response()->json([
-                'message' => 'Logged in successfully',
+            return ok('Logged in successfully', [
                 'access_token' => $token,
                 'role' => $user->role,
                 'company_id' => $user->company_id ?? null,
@@ -90,22 +84,21 @@ class UserAuthController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
-    public function resetPassword(Request $request)
+    public function changePassword(Request $request)
     {
         try {
             $loginUserData = $request->validate([
-                'email' => 'required|string|email',
+                'email'       => 'required|string|email',
                 'oldPassword' => 'required|min:8',
                 'newPassword' => 'required|min:8',
             ]);
-            $user = User::where('email', $loginUserData['email'])->first();
+            $user = User::where('email', $loginUserData['email'])->firstOrFail();
             // check for the old password
             if (!$user || !Hash::check($loginUserData['oldPassword'], $user->password)) {
                 return error('Invalid Credentials');
             }
             $user->update([
                 'password' => bcrypt($loginUserData['newPassword']),
-                'updated_by' => auth()->user()->id,
             ]);
             return ok('Password reset successfully');
         } catch (\Exception $e) {
