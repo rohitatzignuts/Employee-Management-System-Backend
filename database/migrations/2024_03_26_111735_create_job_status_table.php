@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('job_status', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('users');
-            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');;
-            $table->foreignId('job_id')->nullable()->constrained('jobs');
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('company_id')->constrained('companies')->onDelete('cascade');
+            $table->foreignId('job_id')->nullable()->constrained('jobs')->onDelete('cascade');
             $table->enum('status', ['Accepted', 'Rejected','Pending'])->default('Pending');
             $table->string('resume');
             $table->timestamps();

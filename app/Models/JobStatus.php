@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
+use Illuminate\Support\Facades\Auth;
 
 class JobStatus extends Model
 {
@@ -31,7 +31,7 @@ class JobStatus extends Model
      */
     public function job(): BelongsTo
     {
-        return $this->belongsTo(Job::class)->select('id','title');
+        return $this->belongsTo(Job::class)->select('id', 'title');
     }
 
     /**
@@ -44,7 +44,7 @@ class JobStatus extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
-        protected static function boot()
+    protected static function boot()
     {
         parent::boot();
 

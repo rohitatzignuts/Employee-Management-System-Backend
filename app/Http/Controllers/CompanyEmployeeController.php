@@ -8,13 +8,22 @@ use App\Models\Preferences;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-// use App\Http\Helpers\EmployeeNumber;
+use App\Services\EmployeeService;
 
 require_once app_path('Http/Helpers/APIResponse.php');
-// require_once app_path('Http/Helpers/EmployeeNumber.php');
 
 class CompanyEmployeeController extends Controller
 {
+    /**
+     * Register EmployeeService
+     */
+    protected $employeeService;
+
+    public function __construct(EmployeeService $employeeService)
+    {
+        $this->employeeService = $employeeService;
+    }
+
     /**
      * Display a listing of the resource on the basis of search term and filter status if not given return all
      * @method GET
@@ -29,20 +38,20 @@ class CompanyEmployeeController extends Controller
     {
         try {
             $request->validate([
-                'company' => 'string|required',
+                'company' => 'string|nullable',
                 'status' => 'string|nullable',
             ]);
 
             $company = Company::where('name', $request->input('company'))->firstOrFail();
-            $employees = User::where('company_id',$company->id)->get();
+            $employees = User::where('company_id', $company->id)->with('company')->get();
 
-            if ($employees->isEmpty()) {
-                return ok('No employees found for this company', []);
+            if ($employees->isEmpty() || !$request->input('company')) {
+                return ok([]);
             }
 
             return ok('Employees of ' . $company->name . ' found successfully', $employees);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return ok('Company not found', []);
+            return ok([]);
         } catch (\Exception $e) {
             return error('Error getting employees: ' . $e->getMessage());
         }
@@ -109,13 +118,13 @@ class CompanyEmployeeController extends Controller
             ]);
 
             $company = Company::where('name', $request['company_name'])->first();
-
+            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber($company->id);
             $employee = User::create(
                 $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
                     'role' => 'employee',
                     'password' => 'password',
                     'company_id' => $company->id,
-                    'emp_number' => generateUniqueEmployeeNumber(),
+                    'emp_number' => $employeeNumber,
                     'created_by' => auth()->user()->id,
                 ],
             );

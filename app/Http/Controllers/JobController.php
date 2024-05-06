@@ -50,7 +50,7 @@ class JobController extends Controller
             // filter list on company name
             if ($request->has('company')) {
                 $company = $request->input('company');
-                $jobs = $jobs->where('company_name', $company);
+                $jobs = $jobs->where('company.name', $company);
             }
 
             if ($jobs->isEmpty()) {
@@ -97,7 +97,7 @@ class JobController extends Controller
 
             return ok('Jobs Listed By the Company Found!!', $jobs);
         } catch (\Exception $e) {
-            return error('Error getting jobs: ' . $e->getMessage());
+            return error($e->getMessage());
         }
     }
 

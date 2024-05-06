@@ -63,9 +63,9 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
         Route::delete('/jobs/{job_id}', [JobController::class, 'destroy']);
 
         // job status routes
-        Route::get('/applications', [JobStatusController::class, 'index']);
+        Route::get('/applications/all', [JobStatusController::class, 'index']);
         Route::get('/{company_id}/applications', [JobStatusController::class, 'companyApplicants']);
-        Route::post('/applications/{application_id}/edit', [JobStatusController::class, 'update']);
+        Route::post('/applications/update/{application_id}', [JobStatusController::class, 'update']);
         Route::delete('/applications/{applicatiob_id}', [JobStatusController::class, 'destroy']);
         Route::get('/applications/{application_id}', [JobStatusController::class, 'show']);
     });

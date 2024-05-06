@@ -31,7 +31,7 @@
         },
         "files": [
             "app/Http/Helpers/APIResponse.php",
-            "app/Http/Helpers/EmployeeNumber.php"
+            "app/EmployeeNumber.php"
         ]
     },
     "autoload-dev": {

@@ -24,10 +24,10 @@ class UserAuthController extends Controller
     {
         try {
             $request->validate([
-                'first_name'  => 'required|string',
-                'last_name'  => 'required|string',
-                'email'      => 'required|string|email|unique:users',
-                'password'   => 'required|min:8|confirmed',
+                'first_name' => 'required|string',
+                'last_name' => 'required|string',
+                'email' => 'required|string|email|unique:users',
+                'password' => 'required|min:8|confirmed',
             ]);
             $user = User::create(
                 $request->only('first_name', 'last_name', 'email') + [
@@ -53,7 +53,7 @@ class UserAuthController extends Controller
     {
         try {
             $loginUserData = $request->validate([
-                'email'    => 'required|string|email',
+                'email' => 'required|string|email',
                 'password' => 'required|min:8',
             ]);
             $user = User::where('email', $loginUserData['email'])->firstOrFail();
@@ -70,7 +70,7 @@ class UserAuthController extends Controller
                 'company_name' => $user->company ? $user->company->name : null,
             ]);
         } catch (\Exception $e) {
-            return error('An error occurred', $e->getMessage());
+            return error('Error : user not found', $e->getMessage());
         }
     }
 
@@ -88,7 +88,7 @@ class UserAuthController extends Controller
     {
         try {
             $loginUserData = $request->validate([
-                'email'       => 'required|string|email',
+                'email' => 'required|string|email',
                 'oldPassword' => 'required|min:8',
                 'newPassword' => 'required|min:8',
             ]);

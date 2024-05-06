@@ -12,13 +12,22 @@ use Illuminate\Http\Response;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use App\Mail\LoginMail;
 use Illuminate\Support\Facades\Mail;
-// use App\Http\Helpers\EmployeeNumber;
+use App\Services\EmployeeService;
 
 require_once app_path('Http/Helpers/APIResponse.php');
-// require_once app_path('Http/Helpers/EmployeeNumber.php');
 
 class CompanyController extends Controller
 {
+    /**
+     * Register EmployeeService
+     */
+    protected $employeeService;
+
+    public function __construct(EmployeeService $employeeService)
+    {
+        $this->employeeService = $employeeService;
+    }
+
     /**
      * Display a listing of the companies for super admin.
      *
@@ -101,12 +110,13 @@ class CompanyController extends Controller
                 ],
             );
 
+            $employeeNumber = $this->employeeService->generateUniqueEmployeeNumber();
             $user = User::create(
                 $request->only(['first_name', 'last_name', 'email', 'joining_date']) + [
                     'role' => 'cmp_admin',
                     'password' => bcrypt('password'),
                     'company_id' => $company->id,
-                    'emp_number' => generateUniqueEmployeeNumber(),
+                    'emp_number' => $employeeNumber,
                 ],
             );
 
@@ -238,11 +248,11 @@ class CompanyController extends Controller
     public function registeredCompanies()
     {
         try {
-            // get company names array for the filtering process
-            $companies = Job::with('company')->get()->pluck('company.name');
-            $uniqueCompanies = collect($companies)->unique()->values()->all();
-            // return company names (unique) in the api response
-            return ok('Companies Found !!', $uniqueCompanies);
+            // get unique company names for the filtering process
+            $uniqueJobCompanies = Job::with('company')->get()->pluck('company.name')->unique()->values()->all();
+            $allCompanies = Company::pluck('name')->unique()->values()->all();
+            // return company names (unique) in the API response
+            return ok('Companies Found !!', ['uniqueJobCompanies' => $uniqueJobCompanies, 'allCompanies' => $allCompanies]);
         } catch (\Exception $e) {
             return error('Error getting companies: ' . $e->getMessage());
         }
