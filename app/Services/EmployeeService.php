@@ -19,7 +19,7 @@ class EmployeeService
 
         // Generate the next employee number
         $nextEmpNumber = $preferences->value;
-        $employeeNumber = 'EMP-' . str_pad($nextEmpNumber, strlen((string) $nextEmpNumber), '0', STR_PAD_LEFT);
+        $employeeNumber = 'EMP' . str_pad($nextEmpNumber, strlen((string) $nextEmpNumber) + 4, '0', STR_PAD_LEFT);
 
         // Update preferences for the next employee number
         $preferences->update(['value' => $nextEmpNumber + 1]);

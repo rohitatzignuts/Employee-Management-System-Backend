@@ -33,7 +33,7 @@ class CompaniesSeeder extends Seeder
             'role' => 'cmp_admin',
             'password' => bcrypt('password'),
             'company_id' => 1,
-            'emp_number' => 'EMP-0',
+            'emp_number' => 'EMP00000',
         ]);
     }
 }

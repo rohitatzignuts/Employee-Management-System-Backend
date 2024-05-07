@@ -7,6 +7,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\CompanyEmployeeController;
 use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\MovieController;
 use App\Http\Controllers\JobStatusController;
 
 /*
@@ -26,6 +27,11 @@ Route::post('/login', [UserAuthController::class, 'login']);
 Route::get('/jobs', [JobController::class, 'index']);
 Route::get('/jobs/{job_id}', [JobController::class, 'show']);
 Route::get('/registeredCompanies', [CompanyController::class, 'registeredCompanies']);
+
+//movies route
+Route::group(['prefix' => 'movies'], function () {
+    Route::get('/', [MovieController::class, 'index']);
+});
 
 // Protected routes
 Route::group(['middleware' => ['auth:sanctum']], function () {
